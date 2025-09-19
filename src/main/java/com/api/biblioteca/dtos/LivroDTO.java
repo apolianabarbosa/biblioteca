@@ -1,5 +1,6 @@
 package com.api.biblioteca.dtos;
 import java.time.Year;
+
 import com.api.biblioteca.model.Livro;
 
 public class LivroDTO {
@@ -14,15 +15,16 @@ public class LivroDTO {
     private Integer qdtDisponivel;
 
     public LivroDTO(Livro livro){
-        this.id = id;
-        this.isbn = isbn;
-        this.titulo = titulo;
-        this.autor = autor;
-        this.categoria = categoria;
-        this.editora = editora;
-        this.statusLivro = statusLivro;
-        this.anoPublicacao = anoPublicacao;
-        this.qdtDisponivel = qdtDisponivel;
+        this.id = livro.getId();
+        this.isbn = livro.getIsbn();
+        this.titulo = livro.getTitulo();
+        this.autor = livro.getAutor();
+        this.categoria = livro.getCategoria();
+        this.editora = livro.getEditora();
+        this.statusLivro = livro.getStatusLivro();
+        this.anoPublicacao = livro.getAnoPublicacao();
+        this.qdtDisponivel = livro.getQtdDisponivel();
+        
     }
 
     public Long getId() {

@@ -1,9 +1,10 @@
 package com.api.biblioteca.Validation;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class IsbnValidator implements ConstraintValidator<IsbnValido, String>{
-    
+public class IsbnValidator implements ConstraintValidator<IsbnValido, String> {
+
     public static boolean isValidISBN(String isbn) {
         // Remove traços e espaços
         isbn = isbn.replaceAll("[^0-9Xx]", "");
@@ -41,11 +42,10 @@ public class IsbnValidator implements ConstraintValidator<IsbnValido, String>{
     }
 
     @Override
-    public boolean isValid(String isbn, ConstraintValidatorContext context){
-        if(isbn == null || isbn.trim().isEmpty()){
-            return true;
+    public boolean isValid(String isbn, ConstraintValidatorContext context) {
+        if (isbn == null || isbn.trim().isEmpty()) {
+            return true; // Permite campo vazio se não for obrigatório
         }
         return isValidISBN(isbn);
     }
-
 }

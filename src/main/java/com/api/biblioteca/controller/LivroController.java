@@ -1,5 +1,7 @@
 package com.api.biblioteca.controller;
 import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,8 +39,8 @@ public class LivroController {
 
     @PutMapping("/atualizar/{id}")
     @PreAuthorize("hasRole('BIBLIOTECARIO')")
-    public ResponseEntity<?> atualizarLivro(@PathVariable Long id, @RequestBody Livro dadosAtualizados) {
-        return ls.atualizarLivro(id, dadosAtualizados);
+    public ResponseEntity<?> atualizarLivro(@PathVariable Long id, @RequestBody Map<String, Object> dadosAtualizados) {
+        return ls.atualizarLivroParcial(id, dadosAtualizados);
     }
 
     @DeleteMapping("/remover/{id}")

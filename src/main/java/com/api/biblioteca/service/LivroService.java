@@ -1,5 +1,8 @@
 package com.api.biblioteca.service;
+import java.time.Year;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,41 +46,66 @@ public class LivroService {
     }
 
     // Método para ATUALIZAR um livro existente
-    public ResponseEntity<?> atualizarLivro(Long id, Livro dadosAtualizados) {
+    public ResponseEntity<?> atualizarLivroParcial(Long id, Map<String, Object> dadosAtualizados) {
         Optional<Livro> livroOpt = lr.findById(id);
 
         if (livroOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                 .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                             .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
         }
 
         Livro livroExistente = livroOpt.get();
 
-        Optional<Livro> livroMesmoIsbn = lr.findByIsbn(dadosAtualizados.getIsbn());
+        dadosAtualizados.forEach((campo, valor) -> {
+            switch (campo) {
+                case "titulo":
+                    if (valor != null) livroExistente.setTitulo(valor.toString());
+                    break;
+                case "autor":
+                    if (valor != null) livroExistente.setAutor(valor.toString());
+                    break;
+                case "categoria":
+                    if (valor != null) livroExistente.setCategoria(valor.toString());
+                    break;
+                case "editora":
+                    if (valor != null) livroExistente.setEditora(valor.toString());
+                    break;
+                case "anoPublicacao":
+                    if (valor != null) {
+                        try {
+                            Year ano = Year.parse(valor.toString());
+                            livroExistente.setAnoPublicacao(ano);
+                        } catch (DateTimeParseException e) {
 
-        if(livroMesmoIsbn.isPresent() && !livroMesmoIsbn.get().getId().equals(id)){
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(new RespostaModel("O ISBN " + dadosAtualizados.getIsbn() + "já está em uso por outro livro."));
-        }
+                        }
+                    }
+                    break;
+                case "descricao":
+                    if (valor != null) livroExistente.setDescricao(valor.toString());
+                    break;
+                case "qtdTotal":
+                    if (valor != null) {
+                        int novaQtdTotal = Integer.parseInt(valor.toString());
+                        int livrosEmprestados = livroExistente.getQtdTotal() - livroExistente.getQtdDisponivel();
+                        int novaQtdDisponivel = novaQtdTotal - livrosEmprestados;
 
-        int livrosEmprestados = livroExistente.getQtdTotal() - livroExistente.getQtdDisponivel();
-        int novaQtdDisponivel = dadosAtualizados.getQtdTotal() - livrosEmprestados;
-
-        if(novaQtdDisponivel < 0 ){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new RespostaModel("A nova quantidade total não pode ser menor que a quantidade de livros emprestados."));
-        }
-
-        livroExistente.setQtdDisponivel(novaQtdDisponivel);
-        livroExistente.setIsbn(dadosAtualizados.getIsbn());
-        livroExistente.setTitulo(dadosAtualizados.getTitulo());
-        livroExistente.setAutor(dadosAtualizados.getAutor());
-        livroExistente.setCategoria(dadosAtualizados.getCategoria());
-        livroExistente.setEditora(dadosAtualizados.getEditora());
-        livroExistente.setAnoPublicacao(dadosAtualizados.getAnoPublicacao());
-        livroExistente.setDescricao(dadosAtualizados.getDescricao());
-        livroExistente.setQtdTotal(dadosAtualizados.getQtdTotal());
-        livroExistente.setCapa(dadosAtualizados.getCapa());
+                        if (novaQtdDisponivel < 0) {
+                            throw new RuntimeException("A nova quantidade total não pode ser menor que a quantidade de livros emprestados.");
+                        }
+                        livroExistente.setQtdTotal(novaQtdTotal);
+                        livroExistente.setQtdDisponivel(novaQtdDisponivel);
+                    }
+                    break;
+                case "statusLivro":
+                    if (valor != null) {
+                        try {
+                            livroExistente.setStatusLivro(Livro.StatusLivro.valueOf(valor.toString()));
+                        } catch (IllegalArgumentException e) {
+                        }
+                    }
+                    break;
+            }
+        });
 
         Livro livroSalvo = lr.save(livroExistente);
         LivroDTO dto = new LivroDTO(livroSalvo);
