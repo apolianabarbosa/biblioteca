@@ -84,7 +84,7 @@ public class Usuario implements UserDetails{
     private String bairro;
 
     @Column(name = "data_cadastro", updatable = false)
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime dataCadastro;
 
     @PrePersist
@@ -95,7 +95,7 @@ public class Usuario implements UserDetails{
     @Column(name = "data_nascimento")
     @NotNull(message = "Incira a Data de Nascimento")
     @DataNascimentoValida
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dataNascimento;
 
      // Métodos da interface UserDetails

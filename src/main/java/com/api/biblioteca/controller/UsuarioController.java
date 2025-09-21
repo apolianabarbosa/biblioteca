@@ -16,7 +16,7 @@ import com.api.biblioteca.model.RespostaModel;
 import com.api.biblioteca.model.Usuario;
 import com.api.biblioteca.service.JwtService;
 import com.api.biblioteca.service.UsuarioService;
-
+import com.api.biblioteca.dtos.PerfilUsuarioDTO; // Importação do DTO de perfil
 
 @RestController
 @RequestMapping("/usuario")
@@ -43,14 +43,15 @@ public class UsuarioController {
         Optional<Usuario> usuarioOpt = us.getUsuarioLogado();
 
         if(usuarioOpt.isEmpty()){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new RespostaModel("Nenhum usuário autenticado."));
         }
 
-        Usuario usuarioLogado = usuarioOpt.get();
-        UsuarioDTO dto = new UsuarioDTO(usuarioLogado);
+        // Convertendo a entidade Usuario para o DTO Perfil
+        PerfilUsuarioDTO perfilDTO = new PerfilUsuarioDTO(usuarioOpt.get());
 
-        return ResponseEntity.ok(dto);
+        // Retorna o DTO com os dados necessários
+        return ResponseEntity.ok(perfilDTO);
     }
 
     // Rota atualizar dados 
