@@ -41,6 +41,7 @@ public class ReservaService {
      // Método para um LEITOR criar uma nova reserva
     @Transactional
     public ResponseEntity<?> criarReserva(Long idUsuario, Long idLivro) {
+        
         Usuario usuario = ur.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -74,12 +75,15 @@ public class ReservaService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         List<Reserva> reservas = ry.findByUsuario(usuario);
+
+      
         return reservas.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     // Método para um BIBLIOTECARIO listar todas as reservas do sistema
     public List<ReservaDTO> encontrarTodasAsReservas() {
         List<Reserva> todasAsReservas = ry.findAllByOrderByDataReservaDesc();
+
         return todasAsReservas.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 

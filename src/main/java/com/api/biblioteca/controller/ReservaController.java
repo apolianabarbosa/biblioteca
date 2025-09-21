@@ -48,8 +48,15 @@ public class ReservaController {
 
     @GetMapping("/listarTodas")
     @PreAuthorize("hasRole('BIBLIOTECARIO')")
-    public ResponseEntity<List<ReservaDTO>> getTodasAsReservas() {
-        return ResponseEntity.ok(rs.encontrarTodasAsReservas());
+    public ResponseEntity<?> getTodasAsReservas() {
+        List<ReservaDTO> reservas = rs.encontrarTodasAsReservas();
+    
+        if (reservas.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK)
+                        .body(new RespostaModel("Nenhuma reserva encontrada no sistema."));
+        }
+
+        return ResponseEntity.ok(reservas);
     }
 
     @GetMapping("/minhas")
@@ -64,6 +71,10 @@ public class ReservaController {
 
         Long idUsuarioLogado = usuarioOpt.get().getId();
         List<ReservaDTO> usuarioReservas = rs.encontrarReservasPorUsuario(idUsuarioLogado);
+
+        if(usuarioReservas.isEmpty()){
+            return ResponseEntity.ok("Você não possui nenhuma reserva.");
+        }
 
         return ResponseEntity.ok(usuarioReservas);
     }

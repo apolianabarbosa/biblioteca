@@ -1,5 +1,7 @@
 package com.api.biblioteca.repository;
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import com.api.biblioteca.model.Livro;
@@ -27,5 +29,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     // Busca por reservas para o usuario + status da reserva
     List<Reserva> findByUsuarioAndStatusReserva(Usuario usuario, StatusReserva statusReserva);
+
+    Optional<Reserva> findByUsuarioAndLivroAndStatusReserva(Usuario usuario, Livro livro, StatusReserva statusReserva);
 
 }

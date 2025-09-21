@@ -1,5 +1,4 @@
 package com.api.biblioteca.service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.biblioteca.dtos.EmprestimoDTO;
+import com.api.biblioteca.dtos.LivroResumidoDTO;
+import com.api.biblioteca.dtos.UsuarioResumidoDTO;
 import com.api.biblioteca.model.Emprestimo;
 import com.api.biblioteca.model.Emprestimo.StatusEmprestimo;
 import com.api.biblioteca.model.Livro;
@@ -48,8 +50,12 @@ public class EmprestimoService {
             throw new IllegalStateException("Usuário possui multas pendentes e não pode realizar novos empréstimos.");
         }
 
-        if (livro.getQtdDisponivel() <= 0) {
-            throw new IllegalStateException("Livro indisponível para empréstimo.");
+        Optional<Reserva> reservaOpt = reservaRepository.findByUsuarioAndLivroAndStatusReserva(usuario, livro, StatusReserva.ATIVA);
+
+        if (reservaOpt.isPresent()) {
+            Reserva reserva = reservaOpt.get();
+            reserva.setStatusReserva(StatusReserva.ATENDIDA);
+            reservaRepository.save(reserva);
         }
 
         livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
@@ -124,4 +130,22 @@ public class EmprestimoService {
     public Optional<Emprestimo> buscarPorId(Long id) {
         return emprestimoRepository.findById(id);
     }
+
+    public EmprestimoDTO toDTO(Emprestimo emprestimo) {
+    return new EmprestimoDTO(
+        emprestimo.getId(),
+        emprestimo.getDataEmprestimo(),
+        emprestimo.getDataPrevistaDevolucao(),
+        emprestimo.getStatusEmprestimo(),
+        new LivroResumidoDTO(
+            emprestimo.getLivro().getId(),
+            emprestimo.getLivro().getTitulo()
+        ),
+        new UsuarioResumidoDTO(
+            emprestimo.getUsuario().getId(),
+            emprestimo.getUsuario().getNome()
+        )
+    );
+    }
+
 }
