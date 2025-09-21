@@ -1,9 +1,10 @@
 package com.api.biblioteca.controller;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.biblioteca.dtos.MultaDTO;
 import com.api.biblioteca.model.Multa;
 import com.api.biblioteca.model.Multa.StatusMulta;
 import com.api.biblioteca.model.Usuario;
@@ -30,40 +32,56 @@ public class MultaController {
     private UsuarioRepository usuarioRepository; // Usado para buscar o usuário pelo ID
 
     // Endpoint para pagar uma multa
-    @PutMapping("/{id}/pagar")
-    public ResponseEntity<Multa> pagarMulta(@PathVariable Long id) {
+    @PutMapping("/pagar/{id}")
+    @PreAuthorize("hasRole('LEITOR')")
+     public ResponseEntity<MultaDTO> pagarMulta(@PathVariable Long id) { 
         Multa multaPaga = multaService.pagarMulta(id);
-        return ResponseEntity.ok(multaPaga);
+        return ResponseEntity.ok(multaService.toDTO(multaPaga));
     }
 
     // Endpoint para listar todas as multas do sistema
     @GetMapping
-    public ResponseEntity<List<Multa>> listarTodas() {
+    @PreAuthorize("hasRole('BIBLIOTECARIO')")
+    public ResponseEntity<List<MultaDTO>> listarTodas() { 
         List<Multa> multas = multaService.listarTodas();
-        return ResponseEntity.ok(multas);
+        List<MultaDTO> dtos = multas.stream()
+                .map(multaService::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     // Endpoint para buscar uma multa pelo seu ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Multa> buscarPorId(@PathVariable Long id) {
+    @GetMapping("/buscar/{id}")
+    @PreAuthorize("hasAnyRole('BIBLIOTECARIO', 'LEITOR')")
+    public ResponseEntity<MultaDTO> buscarPorId(@PathVariable Long id) {
         return multaService.buscarPorId(id)
+                .map(multaService::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     // Endpoint para listar multas por status (PENDENTE ou PAGO)
-    @GetMapping("/status")
-    public ResponseEntity<List<Multa>> listarPorStatus(@RequestParam("status") StatusMulta status) {
+    @GetMapping("/filtrar/statusMulta")
+    @PreAuthorize("hasAnyRole('BIBLIOTECARIO', 'LEITOR')")
+     public ResponseEntity<List<MultaDTO>> listarPorStatus(@RequestParam("status") StatusMulta status) { 
         List<Multa> multas = multaService.listarMultasPorStatus(status);
-        return ResponseEntity.ok(multas);
+        List<MultaDTO> dtos = multas.stream()
+                .map(multaService::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
-    
+
+
     // Endpoint para listar todas as multas de um usuário específico
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<Multa>> listarPorUsuario(@PathVariable Long idUsuario) {
+    @PreAuthorize("hasRole('LEITOR')")
+    public ResponseEntity<List<MultaDTO>> listarPorUsuario(@PathVariable Long idUsuario) { 
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + idUsuario));
         List<Multa> multas = multaService.listarMultasPorUsuario(usuario);
-        return ResponseEntity.ok(multas);
+        List<MultaDTO> dtos = multas.stream()
+                .map(multaService::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }

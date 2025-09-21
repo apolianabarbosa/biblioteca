@@ -30,6 +30,7 @@ public class UsuarioController {
         this.us = us;
         this.jwtService = jwtService;
     }
+    
     // ROTAS PUBLICAS
     @GetMapping("/bem-vinda")
     public String rota(){

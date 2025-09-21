@@ -36,6 +36,7 @@ public class SecurityConfig {
          http.csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
+
                 // Rotas Públicas
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
@@ -45,10 +46,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/admin/listarUsuarios").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/admin/buscar").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/admin/filtrar/{role}").hasRole("BIBLIOTECARIO")
-                .requestMatchers(HttpMethod.POST, "/livros/cadatrar").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.POST, "/livros/cadastrar").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.PUT, "/livros/atualizar/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.DELETE, "/livros/remover/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/reservas/listarTodas").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.POST, "/emprestimos/registrar").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.GET, "/emprestimos").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.PUT, "/emprestimos/devolver/{id}").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.GET, "/multas").hasRole("BIBLIOTECARIO")
 
                 // Rotas de duplo acesso(Usuário/Admin)
                 .requestMatchers(HttpMethod.GET, "/usuario/meuPerfil").authenticated()
@@ -59,10 +64,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/livros/buscar/isbn/{isbn}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/livros/filtrar/categoria").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/livros/filtrar/statusLivro").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.GET, "/emprestimos/buscar/{id}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.GET, "/multas/buscar/{id}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.GET, "/multas/filtrar/statusMulta").hasAnyRole("BIBLIOTECARIO", "LEITOR")
 
                 // Rota de Usuário
                 .requestMatchers(HttpMethod.POST, "/reservas/solicitar").hasRole("LEITOR")
                 .requestMatchers(HttpMethod.GET, "/reservas/minhas").hasRole("LEITOR")
+                .requestMatchers(HttpMethod.GET, "/emprestimos/usuario/{idUsuario}").hasRole("LEITOR")
+                .requestMatchers(HttpMethod.PUT, "/multas/pagar/{id}").hasRole("LEITOR")
+                .requestMatchers(HttpMethod.GET, "/multas/usuario/{idUsuario}").hasRole("LEITOR")
 
                 // Todas as outras rotas exigem autenticação (LEITOR ou BIBLIOTECARIO)
                 .anyRequest().authenticated()

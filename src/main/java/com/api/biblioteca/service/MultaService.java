@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.biblioteca.dtos.MultaDTO;
 import com.api.biblioteca.model.Emprestimo;
 import com.api.biblioteca.model.Multa;
 import com.api.biblioteca.model.Multa.StatusMulta;
@@ -67,8 +68,8 @@ public class MultaService {
         return multaRepository.findByEmprestimoUsuario(usuario);
     }
 
-    public List<Multa> listarMultasPorStatus(StatusMulta status) {
-        return multaRepository.findByStatusMulta(status);
+    public List<Multa> listarMultasPorStatus(StatusMulta statusMulta) {
+        return multaRepository.findByStatusMulta(statusMulta);
     }
 
     public Optional<Multa> buscarPorId(Long id) {
@@ -78,4 +79,17 @@ public class MultaService {
     public List<Multa> listarTodas() {
         return multaRepository.findAll();
     }
+
+    public MultaDTO toDTO(Multa multa) {
+    return new MultaDTO(
+        multa.getId(),
+        multa.getValor(),
+        multa.getStatusMulta(),
+        multa.getEmprestimo().getId(),
+        multa.getEmprestimo().getDataEmprestimo(),
+        multa.getEmprestimo().getLivro().getTitulo(),
+        multa.getEmprestimo().getUsuario().getNome()
+    );
+    }
+    
 }

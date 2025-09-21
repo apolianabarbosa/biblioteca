@@ -31,7 +31,7 @@ public class LivroController {
 
     // MÉTODOS DE CADASTRO E ATUALIZAÇÃO (Acesso de Bibliotecário)
 
-    @PostMapping("/cadatrar")
+    @PostMapping("/cadastrar")
     @PreAuthorize("hasRole('BIBLIOTECARIO')")
     public ResponseEntity<?> cadastrarLivro(@RequestBody Livro livro) {
         return ls.cadastrarLivro(livro);
