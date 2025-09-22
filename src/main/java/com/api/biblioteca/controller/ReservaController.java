@@ -72,10 +72,6 @@ public class ReservaController {
         Long idUsuarioLogado = usuarioOpt.get().getId();
         List<ReservaDTO> usuarioReservas = rs.encontrarReservasPorUsuario(idUsuarioLogado);
 
-        if(usuarioReservas.isEmpty()){
-            return ResponseEntity.ok("Você não possui nenhuma reserva.");
-        }
-
         return ResponseEntity.ok(usuarioReservas);
     }
 

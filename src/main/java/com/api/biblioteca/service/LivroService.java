@@ -209,5 +209,16 @@ public class LivroService {
         return ResponseEntity.ok(dto);
     }
 
+    // Método para buscar livro na barra de pesquisa
+    public List<LivroDTO> buscarLivrosPorTermoGeral(String termo){
+        List<Livro> livros = lr.buscarPorTermoGeral(termo);
+        return livros.stream().map(LivroDTO::new).collect(Collectors.toList()); 
+    }
+
+    // Método de uso do findById
+    public Optional<Livro> buscarPorId(Long id) {
+        return lr.findById(id);
+    }
+
 }
 

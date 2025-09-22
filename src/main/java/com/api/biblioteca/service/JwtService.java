@@ -13,6 +13,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
+import com.api.biblioteca.model.Usuario;
 
 @Service
 public class JwtService {
@@ -32,8 +33,23 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    // ✅ MUDANÇA PRINCIPAL ACONTECE AQUI
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        // 1. Criamos um mapa para guardar nossas informações extras (claims).
+        Map<String, Object> claims = new HashMap<>();
+
+        // 2. Verificamos se o userDetails é uma instância da nossa classe Usuario.
+        //    Isso nos permite acessar métodos específicos como getId() e getRole().
+        if (userDetails instanceof Usuario) {
+            Usuario usuario = (Usuario) userDetails;
+            
+            // 3. Adicionamos os claims customizados que queremos no payload do token.
+            claims.put("id", usuario.getId());
+            claims.put("role", usuario.getRole().toString());
+        }
+
+        // 4. Chamamos o outro método generateToken, passando nosso mapa de claims.
+        return generateToken(claims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
@@ -52,7 +68,7 @@ public class JwtService {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
+                .setSubject(userDetails.getUsername()) // .getUsername() na sua entidade Usuario retorna o email
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)

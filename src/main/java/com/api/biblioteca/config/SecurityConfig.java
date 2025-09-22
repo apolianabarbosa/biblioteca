@@ -50,6 +50,9 @@ public class SecurityConfig {
                 // <-- MUDANÇA 2 AQUI: Tornamos a listagem de livros pública por enquanto
                 .requestMatchers(HttpMethod.GET, "/livros").permitAll() 
 
+                // Permite que qualquer um acesse as capas dos livros
+                .requestMatchers(HttpMethod.GET, "/livros/{id}/capa").permitAll()
+
                 // Rotas de Admin
                 .requestMatchers(HttpMethod.GET, "/admin/listarUsuarios").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/admin/buscar").hasRole("BIBLIOTECARIO")
@@ -84,6 +87,7 @@ public class SecurityConfig {
 
                 // Todas as outras rotas exigem autenticação
                 .anyRequest().authenticated()
+
             )
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

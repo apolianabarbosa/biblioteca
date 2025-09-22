@@ -2,6 +2,8 @@ package com.api.biblioteca.repository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Livro.StatusLivro;
@@ -29,4 +31,11 @@ public interface LivroRepository extends JpaRepository<Livro, Long>{
 
     // Checar isbn
     boolean existsByIsbn(String isbn);
+
+    // Galera aqui realiza busca por titulo, autor ou categoria em uma única barra de pesquisa
+    @Query("SELECT l FROM Livro l WHERE " +
+       "LOWER(l.titulo) LIKE LOWER(CONCAT('%', :termo, '%')) OR " +
+       "LOWER(l.autor) LIKE LOWER(CONCAT('%', :termo, '%')) OR " +
+       "LOWER(l.categoria) LIKE LOWER(CONCAT('%', :termo, '%'))")
+    List<Livro> buscarPorTermoGeral(@Param("termo") String termo);
 }
