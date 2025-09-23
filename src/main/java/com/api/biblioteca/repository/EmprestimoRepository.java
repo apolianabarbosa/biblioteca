@@ -26,4 +26,7 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
 
     // Busca empréstimos de um usuário por status 
     List<Emprestimo> findByUsuarioAndStatusEmprestimo(Usuario usuario, StatusEmprestimo statusEmprestimo);
+
+    // Método para identificar a existência de emprestimos em biblioteca service
+    boolean existsByLivroId(Long livroId);
 }

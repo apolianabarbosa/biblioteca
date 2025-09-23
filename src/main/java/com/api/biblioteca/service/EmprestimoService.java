@@ -50,12 +50,12 @@ public class EmprestimoService {
             throw new IllegalStateException("Usuário possui multas pendentes e não pode realizar novos empréstimos.");
         }
 
-        Optional<Reserva> reservaOpt = reservaRepository.findByUsuarioAndLivroAndStatusReserva(usuario, livro, StatusReserva.ATIVA);
+        List<Reserva> reservasAtivas = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA);
 
-        if (reservaOpt.isPresent()) {
-            Reserva reserva = reservaOpt.get();
-            reserva.setStatusReserva(StatusReserva.ATENDIDA);
-            reservaRepository.save(reserva);
+        if (!reservasAtivas.isEmpty()) {
+            Reserva reservaParaAtender = reservasAtivas.get(0); // Pega a mais antiga da fila
+            reservaParaAtender.setStatusReserva(StatusReserva.ATENDIDA);
+            reservaRepository.save(reservaParaAtender);
         }
 
         livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);

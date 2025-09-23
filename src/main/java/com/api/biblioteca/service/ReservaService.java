@@ -49,6 +49,12 @@ public class ReservaService {
                 .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
         
+        if (ry.existsByUsuarioAndLivroAndStatusReserva(usuario, livro, StatusReserva.ATIVA)) {
+        // Se já existir, retorna um erro 409 Conflict com uma mensagem clara.
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Você já possui uma reserva ativa para este livro.");
+        }
+
+
         if (livro.getQtdDisponivel() <= 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Livro indisponível para reserva no momento.");
         }

@@ -15,15 +15,22 @@ import com.api.biblioteca.dtos.LivroDTO;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Livro.StatusLivro;
 import com.api.biblioteca.model.RespostaModel;
+import com.api.biblioteca.repository.EmprestimoRepository;
+
 import com.api.biblioteca.repository.LivroRepository;
+import com.api.biblioteca.repository.ReservaRepository;
 
 @Service
 public class LivroService {
     private final LivroRepository lr;
+    private final EmprestimoRepository emprestimoRepository;
+    private final ReservaRepository reservaRepository;
 
     @Autowired
-    public LivroService(LivroRepository lr){
+    public LivroService(LivroRepository lr, EmprestimoRepository emprestimoRepository, ReservaRepository reservaRepository){
         this.lr = lr;
+        this.emprestimoRepository = emprestimoRepository;
+        this.reservaRepository = reservaRepository;
     }
 
 // MÉTODOS DE CADASTRO E ATUALIZAÇÃO (Acesso de Bibliotecário)
@@ -119,6 +126,18 @@ public class LivroService {
         if (!lr.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                  .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
+        }
+
+        // Verifica se existem empréstimos associados a este livro
+        if (emprestimoRepository.existsByLivroId(id)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT) // 409 Conflict é um bom status para isso
+                                 .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
+        }
+
+        // Verifica se existem reservas associadas a este livro
+        if (reservaRepository.existsByLivroId(id)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                                 .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
         }
 
         lr.deleteById(id);
