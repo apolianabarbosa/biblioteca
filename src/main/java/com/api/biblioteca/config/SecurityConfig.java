@@ -1,6 +1,5 @@
 package com.api.biblioteca.config;
 
-import java.util.Arrays; // <-- IMPORT NECESSÁRIO
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -8,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 // Adicione este import
-import org.springframework.security.config.Customizer; 
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -45,6 +44,8 @@ public class SecurityConfig {
                 // Rotas Públicas
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/recuperarSenha").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/novaSenha").permitAll()
                 .requestMatchers("/usuario/bem-vinda").permitAll()
                 
                 // <-- MUDANÇA 2 AQUI: Tornamos a listagem de livros pública por enquanto
@@ -100,7 +101,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // <-- MUDANÇA 3 AQUI: Corrigimos a URL para a do nosso projeto Vite
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5174"));
         
         // <-- MUDANÇA 4 AQUI: Adicionamos o método "OPTIONS", importante para o CORS
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

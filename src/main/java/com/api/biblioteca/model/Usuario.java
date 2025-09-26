@@ -98,6 +98,12 @@ public class Usuario implements UserDetails{
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dataNascimento;
 
+    @Column(name = "reset_password_token")
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_token_expiry")
+    private LocalDateTime resetPasswordTokenExpiry;
+
      // Métodos da interface UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -139,4 +145,6 @@ public class Usuario implements UserDetails{
     public boolean isEnabled() {
         return true; 
     }
+
+    
 }

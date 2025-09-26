@@ -45,6 +45,7 @@ public class JwtService {
             
             // 3. Adicionamos os claims customizados que queremos no payload do token.
             claims.put("id", usuario.getId());
+            claims.put("nome", usuario.getNome());
             claims.put("role", usuario.getRole().toString());
         }
 

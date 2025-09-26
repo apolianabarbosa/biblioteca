@@ -23,6 +23,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     // Busca por email
     Optional<Usuario> findByEmail(String email);
 
+    // Redefinir senha
+    Optional<Usuario> findByResetPasswordToken(String token);
+
     // MÉTODOS PARA VISÃO ADM - BIBLIOTECARIO
     // Listagem Global de todos usuarios no sistema de A-Z
     List<Usuario> findAllByOrderByNomeAsc();

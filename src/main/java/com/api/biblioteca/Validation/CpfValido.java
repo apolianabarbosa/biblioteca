@@ -13,7 +13,7 @@ import jakarta.validation.Payload;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CpfValido {
-    String message() default "CPF inválido";
+    String message() default "CPF inválido. Deve conter exatamente 11 dígitos numéricos.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     

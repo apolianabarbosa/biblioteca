@@ -1,20 +1,20 @@
 package com.api.biblioteca.controller;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.api.biblioteca.dtos.CadastroRequestDTO; // <-- MUDANÇA 1: Importe o novo DTO
+import com.api.biblioteca.dtos.CadastroRequestDTO; 
 import com.api.biblioteca.dtos.LoginRequestDTO;
+
 import com.api.biblioteca.model.Usuario;
 import com.api.biblioteca.model.UsuarioRole;
 import com.api.biblioteca.responses.LoginResponse;
 import com.api.biblioteca.service.JwtService;
 import com.api.biblioteca.service.UsuarioService;
-
 import jakarta.validation.Valid;
+record SenhaEsquecidaDTO(String email) {}
+record RedefinirSenhaDTO(String email, String novaSenha) {}
 
 @RequestMapping("/auth")
 @RestController
@@ -41,26 +41,26 @@ public class AuthenticationController {
     // <-- MUDANÇA 2: O método agora recebe CadastroRequestDTO
     @PostMapping("/signup")
     public ResponseEntity<?> cadastrarUsuario(@Valid @RequestBody CadastroRequestDTO dto){
-        // Agora o System.out.println vai aparecer!
-        System.out.println(">>> CHEGOU NO AuthenticationController.cadastrarUsuario COM DTO <<<");
+        return us.criarConta(dto);
+    }
 
-        // 3. Convertemos o DTO para a nossa entidade Usuario
-        Usuario novoUsuario = new Usuario();
-        novoUsuario.setNome(dto.getNome());
-        novoUsuario.setSexo(dto.getSexo());
-        novoUsuario.setCpf(dto.getCpf());
-        novoUsuario.setEmail(dto.getEmail());
-        novoUsuario.setSenha(dto.getSenha());
-        novoUsuario.setTelefone(dto.getTelefone());
-        novoUsuario.setEstado(dto.getEstado());
-        novoUsuario.setCidade(dto.getCidade());
-        novoUsuario.setBairro(dto.getBairro());
-        novoUsuario.setDataNascimento(dto.getDataNascimento());
-        
-        // 4. E definimos o role com segurança aqui
-        novoUsuario.setRole(UsuarioRole.LEITOR);
-
-        // 5. Finalmente, enviamos a entidade completa e controlada para o serviço
-        return us.criarConta(novoUsuario);
+    @PostMapping("/recuperarSenha")
+    public ResponseEntity<String> verificarEmail(@RequestBody SenhaEsquecidaDTO dto) {
+        try {
+            us.verificarEmail(dto.email());
+            return ResponseEntity.ok("E-mail válido. Você pode redefinir sua senha.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    @PostMapping("/novaSenha")
+    public ResponseEntity<String> redefinirSenha(@RequestBody RedefinirSenhaDTO dto) {
+        try {
+            us.redefinirSenha(dto.email(), dto.novaSenha());
+            return ResponseEntity.ok("Senha redefinida com sucesso!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

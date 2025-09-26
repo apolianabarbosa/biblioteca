@@ -14,7 +14,7 @@ import jakarta.validation.Payload;
 
 public @interface TelefoneValido {
 
-    String message() default "Telefone inválido. Use o seguinte formato: (99)99999-9999";
+    String message() default "Telefone inválido. Use o formato com 11 dígitos, incluindo DDD (ex: 71999999999)";
     Class<?>[] groups() default{};
     Class<? extends Payload>[] payload() default {};
 

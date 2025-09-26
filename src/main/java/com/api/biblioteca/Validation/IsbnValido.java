@@ -14,7 +14,7 @@ import jakarta.validation.Payload;
 
 public @interface IsbnValido {
     
-    String message() default "ISBN inválido";
+    String message() default "ISBN inválido. Deve conter 10 ou 13 dígitos.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     

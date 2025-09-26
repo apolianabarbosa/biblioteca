@@ -1,12 +1,14 @@
 package com.api.biblioteca.service;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.api.biblioteca.dtos.CadastroRequestDTO;
 import com.api.biblioteca.dtos.LoginRequestDTO;
 import com.api.biblioteca.dtos.UsuarioDTO;
 import com.api.biblioteca.model.RespostaModel;
@@ -32,7 +35,9 @@ public class UsuarioService {
     private final AuthenticationManager authenticationManager;
     private final RespostaModel rm;
 
-    @Autowired
+    @Value("${biblioteca.admin.codigo-secreto}")
+    private String codigoSecreto;
+    
     public UsuarioService(
         UsuarioRepository ur,
         PasswordEncoder passwordEncoder,
@@ -46,24 +51,42 @@ public class UsuarioService {
     }
 
 // Método de criar cadastro de um novo usuário
-    public ResponseEntity<?> criarConta(Usuario u){
+public ResponseEntity<?> criarConta(CadastroRequestDTO dto){
+
+    // 1. LÓGICA DE VALIDAÇÃO DO CÓDIGO ADMINISTRATIVO
+    if (dto.getRole() == UsuarioRole.BIBLIOTECARIO) {
+        if (dto.getCodigoAdministrativo() == null || !dto.getCodigoAdministrativo().equals(codigoSecreto)) {
+            // Se o código estiver errado, retorna uma resposta de erro claro para o frontend
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new RespostaModel("Código administrativo inválido."));
+        }
+    }
 
     // Verificar email ou CPF existente
-    if(ur.existsByEmail(u.getEmail())){
+    if(ur.existsByEmail(dto.getEmail())){
         return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new RespostaModel("O e-mail informado já está em uso."));
     }
 
-    if(ur.existsByCpf(u.getCpf())){
+    if(ur.existsByCpf(dto.getCpf())){
         return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new RespostaModel("O CPF informado já está em uso."));
     }
-
-    // Senha  criptografada antes de salvar!
-    u.setSenha(passwordEncoder.encode(u.getSenha()));
-    Usuario usuarioSalvo = ur.save(u);
-
-    UsuarioDTO dto = new UsuarioDTO(usuarioSalvo);
+ 
+    Usuario novoUsuario = new Usuario();
+    novoUsuario.setNome(dto.getNome());
+    novoUsuario.setSexo(dto.getSexo());
+    novoUsuario.setCpf(dto.getCpf());
+    novoUsuario.setEmail(dto.getEmail());
+    novoUsuario.setSenha(passwordEncoder.encode(dto.getSenha()));
+    novoUsuario.setTelefone(dto.getTelefone());
+    novoUsuario.setEstado(dto.getEstado());
+    novoUsuario.setCidade(dto.getCidade());
+    novoUsuario.setBairro(dto.getBairro());
+    novoUsuario.setDataNascimento(dto.getDataNascimento());
+    novoUsuario.setRole(dto.getRole());
+        
+    ur.save(novoUsuario);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
 }
@@ -103,6 +126,26 @@ public Optional<Usuario> getUsuarioLogado(){
     }
 
     return ur.findByEmail(emailUsuarioLogado);
+}
+
+// Método verificar email e liberar acesso para redefinir senha
+public void verificarEmail(String email) {
+    Optional<Usuario> usuarioOpt = ur.findByEmail(email);
+    if (usuarioOpt.isEmpty()) {
+        throw new RuntimeException("E-mail não encontrado no sistema.");
+    }
+}
+
+// Método redefinir senha
+public void redefinirSenha(String email, String novaSenha) {
+    Optional<Usuario> usuarioOpt = ur.findByEmail(email);
+    if (usuarioOpt.isEmpty()) {
+        throw new RuntimeException("E-mail não encontrado.");
+    }
+
+    Usuario u = usuarioOpt.get();
+    u.setSenha(passwordEncoder.encode(novaSenha));
+    ur.save(u);
 }
 
 // Método: de atualizar dados cadastrais

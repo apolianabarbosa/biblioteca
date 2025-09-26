@@ -4,10 +4,16 @@ import jakarta.validation.ConstraintValidatorContext;
 
 public class TelefoneValidator implements ConstraintValidator<TelefoneValido, String>{
     
-    private static final String REGEX = "\\(\\d{2}\\)\\d{4,5}-\\d{4}";
+    private static final String REGEX = "\\d{11}";
 
     @Override
     public boolean isValid(String telefone, ConstraintValidatorContext context){
-        return telefone != null && telefone.matches(REGEX);
+        if(telefone == null || telefone.trim().isEmpty()){
+            return true;
+        }
+
+        String telefoneNumerico = telefone.replaceAll("\\D", "");
+
+        return telefoneNumerico.matches(REGEX);
     }
 }

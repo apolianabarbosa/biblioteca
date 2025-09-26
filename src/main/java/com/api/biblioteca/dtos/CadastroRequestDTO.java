@@ -7,13 +7,14 @@ import com.api.biblioteca.Validation.EmailValido;
 import com.api.biblioteca.Validation.SenhaValida;
 import com.api.biblioteca.Validation.TelefoneValido;
 import com.api.biblioteca.model.Usuario.Sexo;
+import com.api.biblioteca.model.UsuarioRole;
+
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import lombok.Getter;
 
 
-// Usamos getters para que o Spring possa ler os dados
 @Getter
 public class CadastroRequestDTO {
 
@@ -51,18 +52,8 @@ public class CadastroRequestDTO {
     @DataNascimentoValida
     private LocalDate dataNascimento;
 
-    // Crie os Getters para todos os campos. 
-    // A maioria das IDEs pode gerar isso automaticamente (clique com o botão direito -> Source Action -> Generate Getters and Setters).
-    // Não precisamos de Setters, pois os dados só virão do JSON.
+    @NotNull(message = "O tipo de usuário (role) não pode ser nulo")
+    private UsuarioRole role;
 
-    public String getNome() { return nome; }
-    public Sexo getSexo() { return sexo; }
-    public String getCpf() { return cpf; }
-    public String getEmail() { return email; }
-    public String getSenha() { return senha; }
-    public String getTelefone() { return telefone; }
-    public String getEstado() { return estado; }
-    public String getCidade() { return cidade; }
-    public String getBairro() { return bairro; }
-    public LocalDate getDataNascimento() { return dataNascimento; }
+    private String codigoAdministrativo;
 }
