@@ -1,11 +1,6 @@
 package com.api.biblioteca.service;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.api.biblioteca.dtos.AtualizacaoUsuarioDTO;
 import com.api.biblioteca.dtos.CadastroRequestDTO;
 import com.api.biblioteca.dtos.LoginRequestDTO;
 import com.api.biblioteca.dtos.UsuarioDTO;
@@ -149,59 +145,56 @@ public void redefinirSenha(String email, String novaSenha) {
 }
 
 // Método: de atualizar dados cadastrais
-public ResponseEntity<?> atualizarDadosUsuario(Map<String, Object> dadosAtualizados){
+public ResponseEntity<?> atualizarDadosUsuario(AtualizacaoUsuarioDTO dadosAtualizados){
     
     Optional<Usuario> usuarioLogadoOpt = getUsuarioLogado();
 
     if(usuarioLogadoOpt.isEmpty()){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new RespostaModel("Usuário não encontrado."));
+                    .body(new RespostaModel("Usuário não autenticado."));
     }
 
     Usuario usuarioExistente = usuarioLogadoOpt.get();
 
-    dadosAtualizados.forEach((campo, valor) -> {
-            switch (campo) {
-                case "nome":
-                    if (valor != null) usuarioExistente.setNome((String) valor);
-                    break;
-                case "senha":
-                    String senha = (String) valor;
-                    if (senha != null && !senha.isEmpty()) {
-                        usuarioExistente.setSenha(passwordEncoder.encode(senha));
-                    }
-                    break;
-                case "telefone":
-                    if (valor != null) usuarioExistente.setTelefone((String) valor);
-                    break;
-                case "estado":
-                    if (valor != null) usuarioExistente.setEstado((String) valor);
-                    break;
-                case "cidade":
-                    if (valor != null) usuarioExistente.setCidade((String) valor);
-                    break;
-                case "bairro":
-                    if (valor != null) usuarioExistente.setBairro((String) valor);
-                    break;
-                case "dataNascimento":
-                    if (valor != null) {
-                        try {
-                            LocalDate data = LocalDate.parse(valor.toString());
-                            usuarioExistente.setDataNascimento(data);
-                        } catch (DateTimeParseException e) {
-                    
-                        }
-                    }
-                    break;
-                }
-            });
 
-    Usuario usuarioSalvo = ur.save(usuarioExistente);
+    if (dadosAtualizados.getNome() != null) {
+        usuarioExistente.setNome(dadosAtualizados.getNome());
+    }
+    if (dadosAtualizados.getTelefone() != null) {
+        usuarioExistente.setTelefone(dadosAtualizados.getTelefone());
+    }
+    if (dadosAtualizados.getEstado() != null) {
+        usuarioExistente.setEstado(dadosAtualizados.getEstado());
+    }
+    if (dadosAtualizados.getCidade() != null) {
+        usuarioExistente.setCidade(dadosAtualizados.getCidade());
+    }
+    if (dadosAtualizados.getBairro() != null) {
+        usuarioExistente.setBairro(dadosAtualizados.getBairro());
+    }
+    if (dadosAtualizados.getDataNascimento() != null) {
+        usuarioExistente.setDataNascimento(dadosAtualizados.getDataNascimento());
+    }
 
-    UsuarioDTO dto = new UsuarioDTO(usuarioSalvo);
 
-    return ResponseEntity.ok(dto);
-    
+    String senhaAtual = dadosAtualizados.getSenhaAtual();
+    String novaSenha = dadosAtualizados.getNovaSenha();
+
+
+    if (senhaAtual != null && !senhaAtual.isEmpty() && novaSenha != null && !novaSenha.isEmpty()) {
+        
+   
+        if (!passwordEncoder.matches(senhaAtual, usuarioExistente.getSenha())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new RespostaModel("A senha atual está incorreta."));
+        }
+
+        usuarioExistente.setSenha(passwordEncoder.encode(novaSenha));
+    }
+
+    ur.save(usuarioExistente);
+
+    return ResponseEntity.ok(new RespostaModel("Perfil atualizado com sucesso!"));
 }
 
 // Métodos visão Adm

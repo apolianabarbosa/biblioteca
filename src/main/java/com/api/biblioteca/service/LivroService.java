@@ -12,11 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.api.biblioteca.dtos.LivroDTO;
+import com.api.biblioteca.model.Emprestimo;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Livro.StatusLivro;
+import com.api.biblioteca.model.Reserva;
 import com.api.biblioteca.model.RespostaModel;
 import com.api.biblioteca.repository.EmprestimoRepository;
-
 import com.api.biblioteca.repository.LivroRepository;
 import com.api.biblioteca.repository.ReservaRepository;
 
@@ -120,30 +121,29 @@ public class LivroService {
         return ResponseEntity.ok(dto);
     }
 
-    // Método para DELETAR um livro
-    public ResponseEntity<RespostaModel> deletarLivro(Long id) {
-
-        if (!lr.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                 .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
-        }
-
-        // Verifica se existem empréstimos associados a este livro
-        if (emprestimoRepository.existsByLivroId(id)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT) // 409 Conflict é um bom status para isso
-                                 .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
-        }
-
-        // Verifica se existem reservas associadas a este livro
-        if (reservaRepository.existsByLivroId(id)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                                 .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
-        }
-
-        lr.deleteById(id);
-        return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
+   public ResponseEntity<RespostaModel> deletarLivro(Long id) {
+    if (!lr.existsById(id)) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                             .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
     }
 
+    // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
+    if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+                         .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
+    }
+    
+    // Verifica se existem empréstimos NÃO FINALIZADOS associados a este livro
+    if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoNot(id, Emprestimo.StatusEmprestimo.FINALIZADO)) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                             .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
+    }
+
+    // ... (verificação de reservas) ...
+
+    lr.deleteById(id);
+    return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
+}
     // MÉTODOS DE BUSCA E LISTAGEM (Acesso de Bibliotecário e Leitor)
 
     // Método para LISTAR todos os livros em ordem alfabética

@@ -1,6 +1,8 @@
 // Crie este novo arquivo: CadastroRequestDTO.java
 package com.api.biblioteca.dtos; // Ou o pacote onde seus DTOs estão
 
+import java.time.LocalDate;
+
 import com.api.biblioteca.Validation.CpfValido;
 import com.api.biblioteca.Validation.DataNascimentoValida;
 import com.api.biblioteca.Validation.EmailValido;
@@ -11,7 +13,6 @@ import com.api.biblioteca.model.UsuarioRole;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
 import lombok.Getter;
 
 

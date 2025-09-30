@@ -29,4 +29,8 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
 
     // Método para identificar a existência de emprestimos em biblioteca service
     boolean existsByLivroId(Long livroId);
+
+    long countByLivroAndStatusEmprestimoIn(Livro livro, List<StatusEmprestimo> statuses);
+    
+    boolean existsByLivroIdAndStatusEmprestimoNot(Long livroId, StatusEmprestimo status);
 }

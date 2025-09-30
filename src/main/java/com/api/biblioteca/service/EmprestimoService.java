@@ -38,6 +38,8 @@ public class EmprestimoService {
     @Autowired
     private MultaService multaService;
 
+   // Em service/EmprestimoService.java
+
     @Transactional
     public Emprestimo criarEmprestimo(Long idUsuario, Long idLivro) {
         Usuario usuario = usuarioRepository.findById(idUsuario)
@@ -52,13 +54,21 @@ public class EmprestimoService {
 
         List<Reserva> reservasAtivas = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA);
 
+        // --- LÓGICA CORRIGIDA ABAIXO ---
+
         if (!reservasAtivas.isEmpty()) {
-            Reserva reservaParaAtender = reservasAtivas.get(0); // Pega a mais antiga da fila
+            // CASO 1: O empréstimo está atendendo a uma reserva.
+            // A quantidade já foi decrementada na criação da reserva, então SÓ atualizamos o status.
+            Reserva reservaParaAtender = reservasAtivas.get(0);
             reservaParaAtender.setStatusReserva(StatusReserva.ATENDIDA);
             reservaRepository.save(reservaParaAtender);
+        } else {
+            // CASO 2: É um empréstimo direto, sem reserva prévia.
+            // Neste caso, precisamos decrementar a quantidade disponível.
+            livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
         }
-
-        livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
+        
+        // O status do livro é atualizado em ambos os casos
         if (livro.getQtdDisponivel() == 0) {
             livro.setStatusLivro(StatusLivro.EMPRESTADO);
         }
@@ -73,38 +83,51 @@ public class EmprestimoService {
     }
 
     @Transactional
-    public Emprestimo devolverLivro(Long idEmprestimo) {
-        Emprestimo emprestimo = emprestimoRepository.findById(idEmprestimo)
-                .orElseThrow(() -> new EntityNotFoundException("Empréstimo não encontrado com o ID: " + idEmprestimo));
+public Emprestimo devolverLivro(Long idEmprestimo) {
+    Emprestimo emprestimo = emprestimoRepository.findById(idEmprestimo)
+            .orElseThrow(() -> new EntityNotFoundException("Empréstimo não encontrado com o ID: " + idEmprestimo));
 
-        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.FINALIZADO) {
-            throw new IllegalStateException("Este empréstimo já foi finalizado.");
-        }
-
-        // Verifica se a devolução está atrasada ANTES de alterar o status
-        boolean estaAtrasado = LocalDateTime.now().isAfter(emprestimo.getDataPrevistaDevolucao());
-        if (estaAtrasado) {
-            multaService.criarMulta(emprestimo); // Cria a multa se houver atraso
-        }
-        
-        // Define o empréstimo como FINALIZADO, pois o livro foi devolvido
-        emprestimo.setStatusEmprestimo(StatusEmprestimo.FINALIZADO);
-
-        Livro livro = emprestimo.getLivro();
-        livro.setQtdDisponivel(livro.getQtdDisponivel() + 1);
-
-        // Verifica se há reservas ativas para este livro
-        List<Reserva> reservasAtivas = reservaRepository.findFirstByLivroAndStatusReservaOrderByDataReservaAsc(livro, StatusReserva.ATIVA);
-
-        if (!reservasAtivas.isEmpty()) {
-            livro.setStatusLivro(StatusLivro.RESERVADO);
-        } else {
-            livro.setStatusLivro(StatusLivro.DISPONIVEL);
-        }
-        livroRepository.save(livro);
-
-        return emprestimoRepository.save(emprestimo);
+    // A verificação de "FINALIZADO" deve acontecer antes de qualquer outra lógica de negócio.
+    if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.FINALIZADO) {
+        throw new IllegalStateException("Este empréstimo já foi finalizado.");
     }
+
+    // Lógica de multa
+    boolean estaAtrasado = LocalDateTime.now().isAfter(emprestimo.getDataPrevistaDevolucao());
+    if (estaAtrasado) {
+        multaService.criarMulta(emprestimo);
+    }
+    
+    // Primeiro, finalizamos o empréstimo atual
+    emprestimo.setStatusEmprestimo(StatusEmprestimo.FINALIZADO);
+
+    // --- LÓGICA DE ATUALIZAÇÃO DO LIVRO CORRIGIDA E MAIS ROBUSTA ---
+    Livro livro = emprestimo.getLivro();
+    livro.setQtdDisponivel(livro.getQtdDisponivel() + 1); // Incrementa a quantidade de volta
+
+    // Verifica se ainda existem OUTROS empréstimos ativos ou atrasados para este livro
+    long outrosEmprestimosAtivos = emprestimoRepository.countByLivroAndStatusEmprestimoIn(
+        livro, List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
+    );
+
+    boolean haReservas = reservaRepository.existsByLivroAndStatusReserva(livro, StatusReserva.ATIVA);
+
+    if (haReservas) {
+        // Se há reservas pendentes, a cópia devolvida fica reservada para o próximo da fila.
+        livro.setStatusLivro(StatusLivro.RESERVADO);
+    } else if (outrosEmprestimosAtivos == 0) {
+        // Se NÃO há reservas E NENHUMA outra cópia está emprestada,
+        // o livro está verdadeiramente disponível.
+        livro.setStatusLivro(StatusLivro.DISPONIVEL);
+    } else {
+        // Se não há reservas, mas outras cópias ainda estão emprestadas,
+        // o status deve ser DISPONIVEL, pois agora temos pelo menos uma cópia.
+        livro.setStatusLivro(StatusLivro.DISPONIVEL);
+    }
+
+    livroRepository.save(livro);
+    return emprestimoRepository.save(emprestimo);
+}
 
     @Transactional
     public void verificarEAtualizarAtrasos() {

@@ -16,6 +16,7 @@ import com.api.biblioteca.model.RespostaModel;
 import com.api.biblioteca.model.Usuario;
 import com.api.biblioteca.service.JwtService;
 import com.api.biblioteca.service.UsuarioService;
+import com.api.biblioteca.dtos.AtualizacaoUsuarioDTO;
 import com.api.biblioteca.dtos.PerfilUsuarioDTO; // Importação do DTO de perfil
 
 @RestController
@@ -56,9 +57,9 @@ public class UsuarioController {
     }
 
     // Rota atualizar dados 
-    @PutMapping("/atualizarDados")
-    @PreAuthorize("hasAnyRole('BIBLIOTECARIO', 'LEITOR')")
-    public ResponseEntity<?> atualizarMeuPerfil(@RequestBody Map<String, Object> dadosAtualizados) {
+    @PutMapping("/meuPerfil")
+    @PreAuthorize("isAuthenticated()") 
+    public ResponseEntity<?> atualizarMeuPerfil(@RequestBody AtualizacaoUsuarioDTO dadosAtualizados) {
         return us.atualizarDadosUsuario(dadosAtualizados);
     }
 

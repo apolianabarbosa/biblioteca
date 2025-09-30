@@ -69,7 +69,7 @@ public class SecurityConfig {
 
                 // Rotas de duplo acesso(Usuário/Admin) - A rota /livros foi movida para cima
                 .requestMatchers(HttpMethod.GET, "/usuario/meuPerfil").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/usuario/atualizarDados").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.PUT, "/usuario/meuPerfil").authenticated()
                 .requestMatchers(HttpMethod.GET, "/livros/buscar/titulo/{titulo}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/livros/buscar/autor/{autor}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/livros/buscar/isbn/{isbn}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
@@ -101,7 +101,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // <-- MUDANÇA 3 AQUI: Corrigimos a URL para a do nosso projeto Vite
-        configuration.setAllowedOrigins(List.of("http://localhost:5174"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         
         // <-- MUDANÇA 4 AQUI: Adicionamos o método "OPTIONS", importante para o CORS
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

@@ -37,4 +37,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     // Metodo para verificar se o usuário já tem reserva
     boolean existsByUsuarioAndLivroAndStatusReserva(Usuario usuario, Livro livro, StatusReserva statusReserva);
+
+    boolean existsByLivroAndStatusReserva(Livro livro, StatusReserva status);
+    
+    boolean existsByLivroIdAndStatusReserva(Long livroId, Reserva.StatusReserva status);
 }

@@ -12,7 +12,7 @@ public class LivroDTO {
     private String editora;
     private Livro.StatusLivro statusLivro;
     private Year anoPublicacao;
-    private Integer qdtDisponivel;
+    private Integer qtdDisponivel;
 
     public LivroDTO(Livro livro){
         this.id = livro.getId();
@@ -23,7 +23,7 @@ public class LivroDTO {
         this.editora = livro.getEditora();
         this.statusLivro = livro.getStatusLivro();
         this.anoPublicacao = livro.getAnoPublicacao();
-        this.qdtDisponivel = livro.getQtdDisponivel();
+        this.qtdDisponivel = livro.getQtdDisponivel();
         
     }
 
@@ -91,12 +91,12 @@ public class LivroDTO {
         this.anoPublicacao = anoPublicacao;
     }
 
-    public Integer getQdtDisponivel() {
-        return qdtDisponivel;
+    public Integer getQtdDisponivel() {
+        return qtdDisponivel;
     }
 
-    public void setQdtDisponivel(Integer qdtDisponivel) {
-        this.qdtDisponivel = qdtDisponivel;
+    public void setQtdDisponivel(Integer qtdDisponivel) {
+        this.qtdDisponivel = qtdDisponivel;
     }
 
     

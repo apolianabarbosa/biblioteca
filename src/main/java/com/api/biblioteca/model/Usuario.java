@@ -95,7 +95,6 @@ public class Usuario implements UserDetails{
     @Column(name = "data_nascimento")
     @NotNull(message = "Incira a Data de Nascimento")
     @DataNascimentoValida
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dataNascimento;
 
     @Column(name = "reset_password_token")
