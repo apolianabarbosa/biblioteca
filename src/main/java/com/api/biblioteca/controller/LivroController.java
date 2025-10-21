@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile; // ✅ Novo import para upload de arquivo
 
+import com.api.biblioteca.dtos.DetalhesLivroResponseDTO;
 import com.api.biblioteca.dtos.LivroDTO;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Livro.StatusLivro;
@@ -104,6 +105,12 @@ public class LivroController {
         return ls.listarTodos();
     }
     
+    @GetMapping("/detalhes/{id}")
+    public ResponseEntity<DetalhesLivroResponseDTO> getLivroDetalhes(@PathVariable Long id) {
+        DetalhesLivroResponseDTO dto = ls.buscarDetalhesPorId(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BIBLIOTECARIO', 'LEITOR')")
     public ResponseEntity<?> getLivroPorId(@PathVariable Long id) {

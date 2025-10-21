@@ -10,10 +10,11 @@ public class LivroDTO {
     private String autor;
     private String categoria;
     private String editora;
+    private String descricao;
     private Livro.StatusLivro statusLivro;
     private Year anoPublicacao;
     private Integer qtdDisponivel;
-
+    
     public LivroDTO(Livro livro){
         this.id = livro.getId();
         this.isbn = livro.getIsbn();
@@ -21,6 +22,7 @@ public class LivroDTO {
         this.autor = livro.getAutor();
         this.categoria = livro.getCategoria();
         this.editora = livro.getEditora();
+        this.descricao = livro.getDescricao();
         this.statusLivro = livro.getStatusLivro();
         this.anoPublicacao = livro.getAnoPublicacao();
         this.qtdDisponivel = livro.getQtdDisponivel();
@@ -97,6 +99,14 @@ public class LivroDTO {
 
     public void setQtdDisponivel(Integer qtdDisponivel) {
         this.qtdDisponivel = qtdDisponivel;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
     

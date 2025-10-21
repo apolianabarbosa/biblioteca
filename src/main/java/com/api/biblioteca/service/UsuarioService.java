@@ -1,6 +1,8 @@
 package com.api.biblioteca.service;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final RespostaModel rm;
+    private final EmailService emailService;
 
     @Value("${biblioteca.admin.codigo-secreto}")
     private String codigoSecreto;
@@ -38,12 +41,14 @@ public class UsuarioService {
         UsuarioRepository ur,
         PasswordEncoder passwordEncoder,
         AuthenticationManager authenticationManager,
-        RespostaModel rm
+        RespostaModel rm,
+        EmailService emailService
     ) {
         this.ur = ur;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.rm = rm;
+        this.emailService = emailService;
     }
 
 // Método de criar cadastro de um novo usuário
@@ -125,23 +130,40 @@ public Optional<Usuario> getUsuarioLogado(){
 }
 
 // Método verificar email e liberar acesso para redefinir senha
-public void verificarEmail(String email) {
-    Optional<Usuario> usuarioOpt = ur.findByEmail(email);
-    if (usuarioOpt.isEmpty()) {
-        throw new RuntimeException("E-mail não encontrado no sistema.");
-    }
+public void solicitarRedefinicao(String email) {
+        Usuario usuario = ur.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("E-mail não encontrado no sistema."));
+
+        String token = UUID.randomUUID().toString();
+        usuario.setResetPasswordToken(token);
+        usuario.setResetPasswordTokenExpiry(LocalDateTime.now().plusHours(1)); // Expira em 1 hora
+
+        ur.save(usuario);
+
+        try {
+            emailService.enviarEmailRecuperacao(usuario.getEmail(), token);
+        } catch (Exception e) {
+            // Logar o erro pode ser útil aqui
+            throw new RuntimeException("Erro ao enviar o e-mail de recuperação.");
+        }
 }
 
 // Método redefinir senha
-public void redefinirSenha(String email, String novaSenha) {
-    Optional<Usuario> usuarioOpt = ur.findByEmail(email);
-    if (usuarioOpt.isEmpty()) {
-        throw new RuntimeException("E-mail não encontrado.");
-    }
+public void redefinirSenhaComToken(String token, String novaSenha) {
+        Usuario usuario = ur.findByResetPasswordToken(token)
+                .orElseThrow(() -> new RuntimeException("Token de redefinição inválido ou não encontrado."));
 
-    Usuario u = usuarioOpt.get();
-    u.setSenha(passwordEncoder.encode(novaSenha));
-    ur.save(u);
+        if (usuario.getResetPasswordTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token de redefinição expirado. Por favor, solicite um novo.");
+        }
+
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        
+        // Limpa o token após o uso para segurança
+        usuario.setResetPasswordToken(null);
+        usuario.setResetPasswordTokenExpiry(null);
+
+        ur.save(usuario);
 }
 
 // Método: de atualizar dados cadastrais

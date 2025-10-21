@@ -10,13 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.api.biblioteca.dtos.DetalhesLivroResponseDTO;
 import com.api.biblioteca.dtos.LivroDTO;
 import com.api.biblioteca.model.Emprestimo;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Livro.StatusLivro;
 import com.api.biblioteca.model.Reserva;
 import com.api.biblioteca.model.RespostaModel;
+import com.api.biblioteca.model.Usuario;
 import com.api.biblioteca.repository.EmprestimoRepository;
 import com.api.biblioteca.repository.LivroRepository;
 import com.api.biblioteca.repository.ReservaRepository;
@@ -26,12 +29,14 @@ public class LivroService {
     private final LivroRepository lr;
     private final EmprestimoRepository emprestimoRepository;
     private final ReservaRepository reservaRepository;
+    private final UsuarioService us;
 
     @Autowired
-    public LivroService(LivroRepository lr, EmprestimoRepository emprestimoRepository, ReservaRepository reservaRepository){
+    public LivroService(LivroRepository lr, EmprestimoRepository emprestimoRepository, ReservaRepository reservaRepository, UsuarioService us){
         this.lr = lr;
         this.emprestimoRepository = emprestimoRepository;
         this.reservaRepository = reservaRepository;
+        this.us = us;
     }
 
 // MÉTODOS DE CADASTRO E ATUALIZAÇÃO (Acesso de Bibliotecário)
@@ -166,6 +171,30 @@ public class LivroService {
         List<LivroDTO> dto = livros.stream().map(LivroDTO::new).collect(Collectors.toList());
 
         return ResponseEntity.ok(dto);
+    }
+    
+    public DetalhesLivroResponseDTO buscarDetalhesPorId(Long id) {
+        // 1. Busca o livro no banco de dados. Se não encontrar, lança um erro 404.
+        Livro livro = lr.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro com o ID " + id + " não encontrado."));
+
+        // 2. Tenta obter o usuário que está logado na sessão atual.
+        Optional<Usuario> usuarioOpt = us.getUsuarioLogado();
+        
+        boolean usuarioJaReservou = false;
+        // 3. Se houver um usuário logado...
+        if (usuarioOpt.isPresent()) {
+            Usuario usuarioLogado = usuarioOpt.get();
+            // ...verifica no repositório de reservas se já existe uma reserva ATIVA para a combinação deste livro e deste usuário.
+            usuarioJaReservou = reservaRepository.existsByLivroIdAndUsuarioIdAndStatusReserva(
+                livro.getId(), 
+                usuarioLogado.getId(), 
+                Reserva.StatusReserva.ATIVA
+            );
+        }
+
+        // 4. Cria e retorna o DTO de resposta, passando o livro e a flag calculada.
+        return new DetalhesLivroResponseDTO(livro, usuarioJaReservou);
     }
     
     // Método para BUSCAR livros por Autor

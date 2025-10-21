@@ -14,7 +14,7 @@ import com.api.biblioteca.service.JwtService;
 import com.api.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
 record SenhaEsquecidaDTO(String email) {}
-record RedefinirSenhaDTO(String email, String novaSenha) {}
+record RedefinirSenhaDTO(String token, String novaSenha) {}
 
 @RequestMapping("/auth")
 @RestController
@@ -44,20 +44,21 @@ public class AuthenticationController {
         return us.criarConta(dto);
     }
 
-    @PostMapping("/recuperarSenha")
-    public ResponseEntity<String> verificarEmail(@RequestBody SenhaEsquecidaDTO dto) {
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> solicitarRedefinicao(@RequestBody SenhaEsquecidaDTO dto) {
         try {
-            us.verificarEmail(dto.email());
-            return ResponseEntity.ok("E-mail válido. Você pode redefinir sua senha.");
+            us.solicitarRedefinicao(dto.email());
+            return ResponseEntity.ok("Se o e-mail existir em nosso sistema, um link de redefinição será enviado.");
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // Retornamos uma mensagem genérica por segurança, para não confirmar se um e-mail existe ou não
+            return ResponseEntity.ok("Se o e-mail existir em nosso sistema, um link de redefinição será enviado.");
         }
     }
     
-    @PostMapping("/novaSenha")
-    public ResponseEntity<String> redefinirSenha(@RequestBody RedefinirSenhaDTO dto) {
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> redefinirSenhaComToken(@RequestBody RedefinirSenhaDTO dto) {
         try {
-            us.redefinirSenha(dto.email(), dto.novaSenha());
+            us.redefinirSenhaComToken(dto.token(), dto.novaSenha());
             return ResponseEntity.ok("Senha redefinida com sucesso!");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

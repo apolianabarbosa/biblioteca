@@ -44,8 +44,9 @@ public class SecurityConfig {
                 // Rotas Públicas
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
-                .requestMatchers(HttpMethod.POST, "/auth/recuperarSenha").permitAll()
-                .requestMatchers(HttpMethod.POST, "/auth/novaSenha").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
+                .requestMatchers(HttpMethod.GET, "/livros/detalhes/{id}").authenticated()
                 .requestMatchers("/usuario/bem-vinda").permitAll()
                 
                 // <-- MUDANÇA 2 AQUI: Tornamos a listagem de livros pública por enquanto

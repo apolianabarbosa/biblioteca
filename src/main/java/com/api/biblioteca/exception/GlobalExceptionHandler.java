@@ -1,9 +1,15 @@
 package com.api.biblioteca.exception;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError; // Importar
+import org.springframework.web.bind.MethodArgumentNotValidException; // Importar
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -13,6 +19,32 @@ import io.jsonwebtoken.security.SignatureException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // --- ADICIONADO: Handler de Validação ---
+    // Captura erros de @Valid (CPF, Telefone, Senha, NotEmpty, etc)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex) {
+        
+        // 1. Cria o objeto "errors" que o seu frontend espera
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            fieldErrors.put(fieldName, errorMessage);
+        });
+
+        // 2. Cria o ProblemDetail e adiciona o mapa de erros
+        ProblemDetail errorDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "A requisição contém dados inválidos.");
+        errorDetail.setTitle("Erro de Validação");
+        
+        // 3. Adiciona a propriedade "errors" que o frontend vai ler
+        errorDetail.setProperty("errors", fieldErrors); 
+        
+        return errorDetail;
+    }
+
+    // --- Seus Handlers de Segurança (Mantidos) ---
+
     // Credenciais inválidas (login incorreto)
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
