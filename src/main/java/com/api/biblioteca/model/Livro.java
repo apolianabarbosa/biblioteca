@@ -66,5 +66,7 @@ public class Livro {
     @NotNull(message = "Quantidade disponível é obrigatória")
     private Integer qtdDisponivel;
     
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String descricao;
 }

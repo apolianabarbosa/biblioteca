@@ -51,7 +51,18 @@ public class EmprestimoService {
         if (multaService.verificarSeUsuarioTemMultasPendentes(usuario)) {
             throw new IllegalStateException("Usuário possui multas pendentes e não pode realizar novos empréstimos.");
         }
+        
+        // Define quais status são considerados "em andamento"
+        List<StatusEmprestimo> statusesEmAndamento = List.of(
+            StatusEmprestimo.ATIVO, 
+            StatusEmprestimo.ATRASADO
+        );
 
+        // Verifica no banco se o usuário já tem empréstimos nesses status
+        if (emprestimoRepository.existsByUsuarioAndStatusEmprestimoIn(usuario, statusesEmAndamento)) {
+            throw new IllegalStateException("Usuário já possui um empréstimo ativo ou atrasado. Não é permitido realizar mais de um empréstimo por vez.");
+        }
+        
         List<Reserva> reservasAtivas = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA);
 
         // --- LÓGICA CORRIGIDA ABAIXO ---

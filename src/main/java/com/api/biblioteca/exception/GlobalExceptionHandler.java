@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.persistence.EntityNotFoundException;
 
 
 @RestControllerAdvice
@@ -87,6 +88,25 @@ public class GlobalExceptionHandler {
         ProblemDetail errorDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         errorDetail.setTitle("Token Expirado");
         errorDetail.setProperty("description", "Sua sessão expirou. Por favor, faça login novamente.");
+        return errorDetail;
+    }
+    // Captura "Usuário já possui empréstimo", "Usuário com multa", etc.
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleBusinessRuleViolation(IllegalStateException ex) {
+    // Retorna um 400 (Bad Request) com a mensagem exata da exceção
+        ProblemDetail errorDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        errorDetail.setTitle("Regra de Negócio Violada");
+        // Usamos o campo "detail" (padrão do ProblemDetail) para passar a mensagem
+        return errorDetail;
+    }
+
+    // --- ADICIONADO: Handler de Recurso Não Encontrado ---
+    // Captura "Usuário não encontrado", "Livro não encontrado", etc.
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ProblemDetail handleResourceNotFound(EntityNotFoundException ex) {
+        // Retorna um 404 (Not Found) com a mensagem exata da exceção
+        ProblemDetail errorDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        errorDetail.setTitle("Recurso Não Encontrado");
         return errorDetail;
     }
 

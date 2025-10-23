@@ -33,4 +33,6 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
     long countByLivroAndStatusEmprestimoIn(Livro livro, List<StatusEmprestimo> statuses);
     
     boolean existsByLivroIdAndStatusEmprestimoNot(Long livroId, StatusEmprestimo status);
+
+    boolean existsByUsuarioAndStatusEmprestimoIn(Usuario usuario, List<StatusEmprestimo> statuses);
 }
