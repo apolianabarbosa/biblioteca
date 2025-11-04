@@ -19,4 +19,6 @@ public interface MultaRepository extends JpaRepository<Multa, Long>{
     // MÉTODO - LEITOR
     // Busca multas de um usuário com um status específico
     List<Multa> findByEmprestimoUsuarioAndStatusMulta(Usuario usuario, StatusMulta statusMulta);
+
+    boolean existsByEmprestimoUsuarioAndStatusMulta(Usuario usuario, StatusMulta statusMulta);
 }

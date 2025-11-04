@@ -33,7 +33,7 @@ public class MultaController {
 
     // Endpoint para pagar uma multa
     @PutMapping("/pagar/{id}")
-    @PreAuthorize("hasRole('LEITOR')")
+    @PreAuthorize("hasRole('BIBLIOTECARIO')")
      public ResponseEntity<MultaDTO> pagarMulta(@PathVariable Long id) { 
         Multa multaPaga = multaService.pagarMulta(id);
         return ResponseEntity.ok(multaService.toDTO(multaPaga));

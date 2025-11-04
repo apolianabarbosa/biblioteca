@@ -65,6 +65,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/reservas/listarTodas").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.POST, "/emprestimos/registrar").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/emprestimos").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.POST, "/emprestimos/confirmar-retirada/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.PUT, "/emprestimos/devolver/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/multas").hasRole("BIBLIOTECARIO")
 

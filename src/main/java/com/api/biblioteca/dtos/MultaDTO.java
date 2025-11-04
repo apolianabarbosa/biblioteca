@@ -10,7 +10,7 @@ public record MultaDTO(
     BigDecimal valor,
     StatusMulta statusMulta,
     Long idEmprestimo,
-    LocalDateTime dataEmprestimo,
+    LocalDateTime dataMulta,
     String tituloLivro,
     String nomeUsuario
 ) {}

@@ -14,7 +14,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     
      // MÉTODOS BASES
     // Listagem Global Ordenada do sistema mais recente ao mais antigo
-    List<Reserva> findAllByOrderByDataReservaDesc();
+    List<Reserva> findAllByOrderByDataReservaAsc();
 
     // MÉTODOS - BIBLIOTECARIO
     // Busca dinamica (reserva de um livro + status da reserva)

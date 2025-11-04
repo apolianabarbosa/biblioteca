@@ -16,7 +16,9 @@ import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Reserva;
 import com.api.biblioteca.model.Reserva.StatusReserva;
 import com.api.biblioteca.model.Usuario;
+import com.api.biblioteca.model.Multa.StatusMulta;
 import com.api.biblioteca.repository.LivroRepository;
+import com.api.biblioteca.repository.MultaRepository;
 import com.api.biblioteca.repository.ReservaRepository;
 import com.api.biblioteca.repository.UsuarioRepository;
 
@@ -29,13 +31,14 @@ public class ReservaService {
     private final ReservaRepository ry;
     private final UsuarioRepository ur;
     private final LivroRepository lr;
-
+    private final MultaRepository mr;
 
     @Autowired
-    public ReservaService(ReservaRepository ry, UsuarioRepository ur, LivroRepository lr){
+    public ReservaService(ReservaRepository ry, UsuarioRepository ur, LivroRepository lr, MultaRepository mr){
         this.ry = ry;
         this.ur = ur;
         this.lr = lr;
+        this.mr = mr;
     }
 
      // Método para um LEITOR criar uma nova reserva
@@ -50,10 +53,12 @@ public class ReservaService {
 
         
         if (ry.existsByUsuarioAndLivroAndStatusReserva(usuario, livro, StatusReserva.ATIVA)) {
-        // Se já existir, retorna um erro 409 Conflict com uma mensagem clara.
         return ResponseEntity.status(HttpStatus.CONFLICT).body("Você já possui uma reserva ativa para este livro.");
         }
 
+        if(mr.existsByEmprestimoUsuarioAndStatusMulta(usuario, StatusMulta.PENDENTE)){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Você possui multas pendentes no sistema.");
+        }
 
         if (livro.getQtdDisponivel() <= 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Livro indisponível para reserva no momento.");
@@ -88,7 +93,7 @@ public class ReservaService {
 
     // Método para um BIBLIOTECARIO listar todas as reservas do sistema
     public List<ReservaDTO> encontrarTodasAsReservas() {
-        List<Reserva> todasAsReservas = ry.findAllByOrderByDataReservaDesc();
+        List<Reserva> todasAsReservas = ry.findAllByOrderByDataReservaAsc();
 
         return todasAsReservas.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
@@ -97,7 +102,8 @@ public class ReservaService {
     private ReservaDTO convertToDTO(Reserva reserva) {
         LivroResumidoDTO livroDTO = new LivroResumidoDTO(
                 reserva.getLivro().getId(),
-                reserva.getLivro().getTitulo()
+                reserva.getLivro().getTitulo(),
+                reserva.getLivro().getAutor()
         );
 
         UsuarioResumidoDTO usuarioDTO = new UsuarioResumidoDTO(

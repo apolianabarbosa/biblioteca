@@ -21,7 +21,10 @@ import lombok.Setter;
 public class Emprestimo {
     
     public enum StatusEmprestimo{
-        ATIVO, FINALIZADO, ATRASADO
+        AGUARDANDO_RETIRADA, 
+        ATIVO, 
+        FINALIZADO, 
+        ATRASADO
     }
 
     @Id
@@ -29,19 +32,11 @@ public class Emprestimo {
     @Column(name = "id_emprestimo")
     private Long id;
 
-    @Column(name = "data_emprestimo", updatable = false)
+    @Column(name = "data_emprestimo")
     private LocalDateTime dataEmprestimo;
 
-
-    @Column(name = "data_prevista_devolucao", updatable = false)
+    @Column(name = "data_prevista_devolucao")
     private LocalDateTime dataPrevistaDevolucao;
-
-    @PrePersist
-    public void prePersist(){
-        this.dataEmprestimo = LocalDateTime.now();
-        this.dataPrevistaDevolucao = this.dataEmprestimo.plusDays(15);
-    }
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status_emprestimo")

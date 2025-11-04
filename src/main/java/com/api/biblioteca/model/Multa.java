@@ -1,5 +1,7 @@
 package com.api.biblioteca.model;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,6 +36,9 @@ public class Multa {
     @Enumerated(EnumType.STRING)
     @Column(name = "status_multa")
     private StatusMulta statusMulta;
+
+    @Column(name = "data_multa")
+    private LocalDateTime dataMulta;
 
     @OneToOne
     @JoinColumn(name = "fk_id_emprestimo", nullable = false, unique = true)
