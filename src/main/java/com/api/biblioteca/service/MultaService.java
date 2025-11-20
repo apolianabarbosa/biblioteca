@@ -24,6 +24,8 @@ public class MultaService {
 
     @Autowired
     private MultaRepository multaRepository;
+    @Autowired
+    private NotificacaoService notificacaoService;
 
     // private static final BigDecimal VALOR_DIARIO_MULTA = new BigDecimal("1.50");
     private static final BigDecimal VALOR_POR_MINUTO_MULTA = new BigDecimal("0.50");
@@ -50,7 +52,21 @@ public class MultaService {
         multa.setStatusMulta(StatusMulta.PENDENTE);
         multa.setDataMulta(LocalDateTime.now());
 
-        return multaRepository.save(multa);
+        Multa multaSalva = multaRepository.save(multa);
+
+        //Notificação
+        try{
+            notificacaoService.criarNotificacao(
+                multaSalva.getEmprestimo().getUsuario(),
+                String.format(
+                    "Uma multa de %.2f foi gerada pelo atraso na devolução de \"%s\".",
+                    multaSalva.getValor(),
+                    multaSalva.getEmprestimo().getLivro().getTitulo())
+            );
+        }catch (Exception e){
+            System.err.println("Erro ao criar notificação (criação multa): " + e.getMessage());
+        }
+        return multaSalva;
     }
 
     @Transactional
@@ -63,7 +79,21 @@ public class MultaService {
         }
 
         multa.setStatusMulta(StatusMulta.PAGO);
-        return multaRepository.save(multa);
+        Multa multaPaga = multaRepository.save(multa);
+
+        //Notificação
+        try{
+            notificacaoService.criarNotificacao(
+                multaPaga.getEmprestimo().getUsuario(),
+                String.format(
+                    "Pagamento da multa R$ %.2f referente ao livro \"%s\" foi confirmado.",
+                    multaPaga.getValor(),
+                    multaPaga.getEmprestimo().getLivro().getTitulo())
+                );
+        }catch (Exception e){
+            System.err.println("Erro ao criar notificação (pagamento multa): " + e.getMessage());
+        }
+        return multaPaga;
     }
 
     public boolean verificarSeUsuarioTemMultasPendentes(Usuario usuario) {

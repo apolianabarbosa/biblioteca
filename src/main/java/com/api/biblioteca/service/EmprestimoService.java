@@ -41,6 +41,8 @@ public class EmprestimoService {
     private MultaService multaService;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private NotificacaoService notificacaoService;
 
    // Em service/EmprestimoService.java
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
@@ -53,62 +55,95 @@ public class EmprestimoService {
         Livro livro = livroRepository.findById(idLivro)
                 .orElseThrow(() -> new EntityNotFoundException("Livro não encontrado com o ID: " + idLivro));
 
+        // Se já existe um empréstimo (mesmo que ainda não retirado) para este usuário e livro, bloqueia.
+        List<StatusEmprestimo> statusImpedimem = List.of(StatusEmprestimo.AGUARDANDO_RETIRADA, StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO);
+        
+        if (emprestimoRepository.existsByUsuarioAndLivroAndStatusEmprestimoIn(usuario, livro, statusImpedimem)) {
+             // Esta exceção impede que o segundo clique crie um novo registro
+             throw new IllegalStateException("Você já possui uma solicitação ativa ou pendente para este livro.");
+        }
+
+        // Verificação de Multas
         if (multaService.verificarSeUsuarioTemMultasPendentes(usuario)) {
             throw new IllegalStateException("Usuário possui multas pendentes e não pode realizar novos empréstimos.");
         }
         
-        // Define quais status são considerados "em andamento"
-        List<StatusEmprestimo> statusesEmAndamento = List.of(
-            StatusEmprestimo.ATIVO, 
-            StatusEmprestimo.ATRASADO,
-            StatusEmprestimo.AGUARDANDO_RETIRADA
-        );
 
-        // Verifica no banco se o usuário já tem empréstimos nesses status
-        if (emprestimoRepository.existsByUsuarioAndStatusEmprestimoIn(usuario, statusesEmAndamento)) {
-            throw new IllegalStateException("Usuário já possui um empréstimo em andamento (ativo, atrasado ou aguardando retirada).");
-        }
-        
-        List<Reserva> reservasAtivas = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA);
+        // Verifica se este usuário tem uma reserva para este livro
+        Optional<Reserva> reservaDoUsuarioOpt = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA)
+                .stream().findFirst();
 
-        if (!reservasAtivas.isEmpty()) {
-            // CASO 1: O empréstimo está atendendo a uma reserva.
-            // A quantidade já foi decrementada na criação da reserva, então SÓ atualizamos o status.
-            Reserva reservaParaAtender = reservasAtivas.get(0);
-            reservaParaAtender.setStatusReserva(StatusReserva.ATENDIDA);
-            reservaRepository.save(reservaParaAtender);
+        if (reservaDoUsuarioOpt.isPresent()) {
+            // CENÁRIO A: O usuário TEM reserva. 
+            Reserva reservaDoUsuario = reservaDoUsuarioOpt.get();
+            
+            // Verifica se existe alguém com reserva MAIS ANTIGA que a dele
+            boolean existeAlguemNaFrente = reservaRepository.existsByLivroAndStatusReservaAndDataReservaBefore(
+                livro, 
+                StatusReserva.ATIVA, 
+                reservaDoUsuario.getDataReserva() // Compara com a data dele
+            );
+
+            if (existeAlguemNaFrente) {
+                throw new IllegalStateException("Não é possível conceder. Existe outro usuário com prioridade na fila de reservas.");
+            }
+
+            // Se ele for o primeiro da fila, consumimos a reserva dele
+            reservaDoUsuario.setStatusReserva(StatusReserva.ATENDIDA);
+            reservaRepository.save(reservaDoUsuario);
+
         } else {
-            // CASO 2: É um empréstimo direto, sem reserva prévia.
-            // Neste caso, precisamos decrementar a quantidade disponível.
+            
+            // Se não tem reserva, ele só pode pegar se NÃO TIVER NINGUÉM na fila
+            boolean existemReservasParaOLivro = reservaRepository.existsByLivroAndStatusReserva(livro, StatusReserva.ATIVA);
+            
+            if (existemReservasParaOLivro) {
+                 throw new IllegalStateException("Este livro possui lista de espera. Faça uma reserva para entrar na fila.");
+            }
+
+            // Se não tem fila, verifica o estoque físico
+            if (livro.getQtdDisponivel() <= 0) {
+                 throw new IllegalStateException("Livro indisponível no estoque.");
+            }
+            // Decrementa estoque apenas se não veio de reserva (pois reserva já decrementou antes)
             livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
         }
         
-        // O status do livro é atualizado em ambos os casos
+        // Atualiza status do livro se zerou
         if (livro.getQtdDisponivel() == 0) {
             livro.setStatusLivro(StatusLivro.EMPRESTADO);
         }
-
         livroRepository.save(livro);
 
+        // Criação final do Empréstimo
         Emprestimo emprestimo = new Emprestimo();
         emprestimo.setUsuario(usuario);
         emprestimo.setLivro(livro);
         emprestimo.setStatusEmprestimo(StatusEmprestimo.AGUARDANDO_RETIRADA);
+        emprestimo.setDataEmprestimo(LocalDateTime.now());
         
-
         Emprestimo emprestimoSalvo = emprestimoRepository.save(emprestimo);
 
+        // Envio de E-mail e Notificação
         try{
             emailService.enviarEmailAprovacaoEmprestimo(
-            emprestimoSalvo.getUsuario().getEmail(),
-            emprestimoSalvo.getUsuario().getNome(),
-            emprestimoSalvo.getLivro().getTitulo(),
-            emprestimoSalvo.getId()
+                emprestimoSalvo.getUsuario().getEmail(),
+                emprestimoSalvo.getUsuario().getNome(),
+                emprestimoSalvo.getLivro().getTitulo(),
+                emprestimoSalvo.getId()
             );
         } catch (MessagingException e){
-            System.err.println("Falha ao enviar e-mail de confirmação (sem data): " + e.getMessage());
+            System.err.println("Falha ao enviar e-mail: " + e.getMessage());
         }
         
+        try{
+            notificacaoService.criarNotificacao(
+                emprestimoSalvo.getUsuario(),
+                "Sua solicitação para \"" + emprestimoSalvo.getLivro().getTitulo() + "\" foi aprovada! Retire-o em até 48h.");
+        }catch (Exception e){
+            System.err.println("Erro notificação: " + e.getMessage());
+        }
+
         return emprestimoSalvo;
     }
 
@@ -144,7 +179,16 @@ public class EmprestimoService {
         } catch (MessagingException e) {
             System.err.println("Falha ao enviar e-mail de confirmação de retirada: " + e.getMessage());
         }
-
+        
+        //Notificação
+        try{
+            String dataFormatada = emprestimoSalvo.getDataPrevistaDevolucao().format(DATE_FORMATTER);
+            notificacaoService.criarNotificacao(
+                emprestimoSalvo.getUsuario(),
+                "Você retirou o livro \"" + emprestimoSalvo.getLivro().getTitulo() + "\". Devolução em: " + dataFormatada);
+        }catch (Exception e){
+            System.err.println("Erro ao criar notificação (confirmar retirada): " + e.getMessage());
+        }
         return emprestimoSalvo;
     }
 
@@ -154,7 +198,6 @@ public class EmprestimoService {
         Emprestimo emprestimo = emprestimoRepository.findById(idEmprestimo)
                 .orElseThrow(() -> new EntityNotFoundException("Empréstimo não encontrado com o ID: " + idEmprestimo));
 
-        // A verificação de "FINALIZADO" deve acontecer antes de qualquer outra lógica de negócio.
         if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.FINALIZADO) {
             throw new IllegalStateException("Este empréstimo já foi finalizado.");
         }
@@ -166,23 +209,32 @@ public class EmprestimoService {
             }
         }
         
-        // Primeiro, finalizamos o empréstimo atual
         emprestimo.setStatusEmprestimo(StatusEmprestimo.FINALIZADO);
 
-        // --- LÓGICA DE ATUALIZAÇÃO DO LIVRO CORRIGIDA E MAIS ROBUSTA ---
         Livro livro = emprestimo.getLivro();
-        livro.setQtdDisponivel(livro.getQtdDisponivel() + 1); // Incrementa a quantidade de volta
+        livro.setQtdDisponivel(livro.getQtdDisponivel() + 1);
 
         // Verifica se ainda existem OUTROS empréstimos ativos ou atrasados para este livro
         long outrosEmprestimosAtivos = emprestimoRepository.countByLivroAndStatusEmprestimoIn(
             livro, List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
         );
 
-        boolean haReservas = reservaRepository.existsByLivroAndStatusReserva(livro, StatusReserva.ATIVA);
-
-        if (haReservas) {
+        Optional<Reserva> proximaReservaOpt = reservaRepository.findTopByLivroAndStatusReservaOrderByDataReserva(livro, StatusReserva.ATIVA);
+        
+        if (proximaReservaOpt.isPresent()) {
             // Se há reservas pendentes, a cópia devolvida fica reservada para o próximo da fila.
             livro.setStatusLivro(StatusLivro.RESERVADO);
+
+            //Notificação
+            try{
+                Reserva proximaReserva = proximaReservaOpt.get();
+                notificacaoService.criarNotificacao(
+                    proximaReserva.getUsuario(),
+                    "Boas notícias! O livro \"" + livro.getTitulo() + "\" que você reservou está disponível para retiada.");
+            }catch (Exception e){
+                System.err.println("Erro ao notificar próximo da reserva: " + e.getMessage());
+            }
+            
         } else if (outrosEmprestimosAtivos == 0) {
             // Se NÃO há reservas E NENHUMA outra cópia está emprestada,
             // o livro está verdadeiramente disponível.
@@ -194,6 +246,15 @@ public class EmprestimoService {
         }
 
         livroRepository.save(livro);
+
+        //Notificação
+        try{
+            notificacaoService.criarNotificacao(
+                emprestimo.getUsuario(),
+                "Obrigado por devolver o livro \"" + livro.getTitulo() + "\".");
+        }catch (Exception e){
+            System.err.println("Erro ao criar notificação (devolução): " + e.getMessage());
+        }
         return emprestimoRepository.save(emprestimo);
     }
 
@@ -204,7 +265,17 @@ public class EmprestimoService {
             if (LocalDateTime.now().isAfter(emprestimo.getDataPrevistaDevolucao())) {
                 emprestimo.setStatusEmprestimo(StatusEmprestimo.ATRASADO);
                 emprestimoRepository.save(emprestimo);
+
+                //Notificação
+                try{
+                    notificacaoService.criarNotificacao(
+                        emprestimo.getUsuario(),
+                        "Atenção! Seu empréstimo do livro \"" + emprestimo.getLivro().getTitulo() + "\" está atrasado.");
+                }catch (Exception e){
+                    System.err.println("Erro ao criar notificação (empréstimo  atrasado): " + e.getMessage());
+                }
             }
+
         }
     }
 

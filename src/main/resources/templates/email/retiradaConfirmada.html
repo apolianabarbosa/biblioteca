@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang='pt-BR' xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f6f6f6; padding: 0; margin: 0; }
+        .container { background: #ffffff; max-width: 600px; margin: 20px auto; padding: 20px; border-radius: 8px; }
+        .header { text-align: center; padding-bottom: 15px; border-bottom: 3px solid #612B9F; }
+        .header img { width: 130px; }
+        h3 { color: #0E0F30; }
+        h4 { color: #0E0F30; margin-top: 20px; }
+        .info strong { color: #612B9F; }
+        .details, .footer { margin-top: 20px; font-size: 15px; }
+        ul { padding-left: 20px; }
+        .cta { display: inline-block; margin-top: 15px; background: #612B9F; color: #ffffff !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .footer { text-align: center; color: #555; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <img src='http://localhost:5173/logoEstanteGira.png' alt='Estante Gira'>
+            <h3>Retirada de Livro Confirmada!</h3>
+        </div>
+    
+        <p>Olá, <strong th:text="${nomeUsuario}">[Nome do Usuário]</strong>!</p>
+        <p>Você retirou seu livro e o seu prazo de empréstimo começou.</p>
+        
+        <p class='info'><strong>Número de Rastreio:</strong> <span th:text="${idEmprestimo}">[ID]</span></p>
+        <hr>
+        <h4>📚 Detalhes do Empréstimo</h4>
+        
+        <p class='info'><strong>Livro:</strong> <span th:text="${tituloLivro}">[Título do Livro]</span></p>
+        <p class='info'><strong>Data prevista para devolução:</strong> <span th:text="${dataFormatada}">[Data da Devolução]</span></p>
+        <hr>
+        <p><a class='cta' href='http://localhost:5173/meus-emprestimos'>Ver meus empréstimos</a></p>
+    
+        <div class='footer'>
+            <p>Obrigado por utilizar a <strong>Estante Gira</strong>! 📚✨</p>
+            <p>Este e-mail é automático, não responda.</p>
+        </div>
+    </div>
+</body>
+</html>

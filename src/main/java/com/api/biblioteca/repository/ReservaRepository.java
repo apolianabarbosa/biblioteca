@@ -1,4 +1,5 @@
 package com.api.biblioteca.repository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     // Listagem - retorna detalhes do livro com a iformação de n pessoas na espera se status for ativa
     long  countByLivroAndStatusReserva(Livro livro, StatusReserva statusReserva);
+
+    Optional<Reserva> findTopByLivroAndStatusReservaOrderByDataReserva(Livro livro, StatusReserva statusReserva);
     
     // MÉTODOS - LEITOR
     // Listagem de todas as reserva de um usuário comum
@@ -38,9 +41,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     // Metodo para verificar se o usuário já tem reserva
     boolean existsByUsuarioAndLivroAndStatusReserva(Usuario usuario, Livro livro, StatusReserva statusReserva);
 
-    boolean existsByLivroAndStatusReserva(Livro livro, StatusReserva status);
+    boolean existsByLivroAndStatusReserva(Livro livro, StatusReserva statusReserva);
     
-    boolean existsByLivroIdAndStatusReserva(Long livroId, Reserva.StatusReserva status); 
+    boolean existsByLivroIdAndStatusReserva(Long livroId, StatusReserva statusReserva); 
 
-    boolean existsByLivroIdAndUsuarioIdAndStatusReserva(Long idLivro, Long idUsuario, StatusReserva status);
+    boolean existsByLivroIdAndUsuarioIdAndStatusReserva(Long idLivro, Long idUsuario, StatusReserva statusReserva);
+
+    boolean existsByLivroAndStatusReservaAndDataReservaBefore(Livro livro, StatusReserva statusReserva, LocalDateTime data);
 }

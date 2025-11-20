@@ -1,4 +1,5 @@
 package com.api.biblioteca.service;
+import java.io.IOException;
 import java.time.Year;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.api.biblioteca.dtos.DetalhesLivroResponseDTO;
@@ -117,8 +119,25 @@ public class LivroService {
                         }
                     }
                     break;
-            }
-        });
+                case "capa":
+                    if (valor instanceof MultipartFile) {
+                        try {
+                            byte[] imagemBytes = ((MultipartFile) valor).getBytes();
+                            livroExistente.setCapa(imagemBytes);
+
+                        } catch (IOException e) {
+                            throw new RuntimeException("Erro ao processar o upload da capa.", e);
+                        }
+                    } else if (valor != null) {
+                        try {
+                            byte[] imagemBytes = java.util.Base64.getDecoder().decode(valor.toString());
+                            livroExistente.setCapa(imagemBytes);
+                        } catch (IllegalArgumentException e) {
+                            throw new RuntimeException("Formato de imagem Base64 inválido.");
+                        }
+                    }
+                    break;
+        } });
 
         Livro livroSalvo = lr.save(livroExistente);
         LivroDTO dto = new LivroDTO(livroSalvo);

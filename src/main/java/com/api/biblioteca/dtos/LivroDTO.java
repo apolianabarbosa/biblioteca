@@ -3,6 +3,9 @@ import java.time.Year;
 
 import com.api.biblioteca.model.Livro;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
+
 public class LivroDTO {
     private Long id;
     private String isbn;
@@ -14,6 +17,7 @@ public class LivroDTO {
     private Livro.StatusLivro statusLivro;
     private Year anoPublicacao;
     private Integer qtdDisponivel;
+    private byte[] capa;
     
     public LivroDTO(Livro livro){
         this.id = livro.getId();
@@ -26,6 +30,7 @@ public class LivroDTO {
         this.statusLivro = livro.getStatusLivro();
         this.anoPublicacao = livro.getAnoPublicacao();
         this.qtdDisponivel = livro.getQtdDisponivel();
+        this.capa = livro.getCapa();
         
     }
 
@@ -109,5 +114,12 @@ public class LivroDTO {
         this.descricao = descricao;
     }
 
+    public byte[] getCapa() {
+        return capa;
+    }
+
+    public void setCapa(byte[] capa) {
+        this.capa = capa;
+    }
     
 }

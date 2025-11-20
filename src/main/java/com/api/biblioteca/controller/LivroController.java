@@ -1,7 +1,7 @@
 package com.api.biblioteca.controller;
 
-import java.io.IOException; // ✅ Novo import para tratar exceções de arquivo
-import java.time.Year; // ✅ Novo import para o tipo 'Year'
+import java.io.IOException; 
+import java.time.Year; 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile; // ✅ Novo import para upload de arquivo
+import org.springframework.web.multipart.MultipartFile;
 
 import com.api.biblioteca.dtos.DetalhesLivroResponseDTO;
 import com.api.biblioteca.dtos.LivroDTO;
@@ -87,9 +87,12 @@ public class LivroController {
     
     // O restante do controller permanece o mesmo...
 
-    @PutMapping("/atualizar/{id}")
+    @PutMapping(value = "/atualizar/{id}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     @PreAuthorize("hasRole('BIBLIOTECARIO')")
-    public ResponseEntity<?> atualizarLivro(@PathVariable Long id, @RequestBody Map<String, Object> dadosAtualizados) {
+    public ResponseEntity<?> atualizarLivro(@PathVariable Long id, @RequestParam Map<String, Object> dadosAtualizados,@RequestParam(value = "capa", required = false) MultipartFile capa) {
+        if(capa != null && !capa.isEmpty()){
+            dadosAtualizados.put("capa", capa);
+        }
         return ls.atualizarLivroParcial(id, dadosAtualizados);
     }
 

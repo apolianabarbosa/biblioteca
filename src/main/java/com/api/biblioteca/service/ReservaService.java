@@ -32,13 +32,15 @@ public class ReservaService {
     private final UsuarioRepository ur;
     private final LivroRepository lr;
     private final MultaRepository mr;
-
+    private final NotificacaoService ns;
+    
     @Autowired
-    public ReservaService(ReservaRepository ry, UsuarioRepository ur, LivroRepository lr, MultaRepository mr){
+    public ReservaService(ReservaRepository ry, UsuarioRepository ur, LivroRepository lr, MultaRepository mr, NotificacaoService ns){
         this.ry = ry;
         this.ur = ur;
         this.lr = lr;
         this.mr = mr;
+        this.ns = ns;
     }
 
      // Método para um LEITOR criar uma nova reserva
@@ -77,6 +79,15 @@ public class ReservaService {
 
         Reserva reservaSalva = ry.save(novaReserva);
 
+        //Notificação
+        try{
+            ns.criarNotificacao(
+                reservaSalva.getUsuario(),
+                "Você reservou o livro \"" + reservaSalva.getLivro().getTitulo() + "\" com sucesso."
+            );
+        }catch (Exception e){
+            System.err.println("Erro ao criar notificação (criação reserva): " + e.getMessage());
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(reservaSalva));
     }
 
@@ -87,7 +98,6 @@ public class ReservaService {
 
         List<Reserva> reservas = ry.findByUsuario(usuario);
 
-      
         return reservas.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 

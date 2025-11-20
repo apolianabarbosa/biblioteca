@@ -1,4 +1,5 @@
 package com.api.biblioteca.repository;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -30,9 +31,13 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
     // Método para identificar a existência de emprestimos em biblioteca service
     boolean existsByLivroId(Long livroId);
 
-    long countByLivroAndStatusEmprestimoIn(Livro livro, List<StatusEmprestimo> statuses);
+    long countByLivroAndStatusEmprestimoIn(Livro livro, List<StatusEmprestimo> statusEmprestimo);
     
-    boolean existsByLivroIdAndStatusEmprestimoNot(Long livroId, StatusEmprestimo status);
+    boolean existsByLivroIdAndStatusEmprestimoNot(Long livroId, StatusEmprestimo statusEmprestimo);
 
-    boolean existsByUsuarioAndStatusEmprestimoIn(Usuario usuario, List<StatusEmprestimo> statuses);
+    boolean existsByUsuarioAndStatusEmprestimoIn(Usuario usuario, List<StatusEmprestimo> status);
+
+    boolean existsByUsuarioAndLivroAndDataEmprestimoAfter(Usuario usuario, Livro livro, LocalDateTime dataLimite);
+
+    boolean existsByUsuarioAndLivroAndStatusEmprestimoIn(Usuario usuario, Livro livro, List<StatusEmprestimo> statusImpedimem);
 }
