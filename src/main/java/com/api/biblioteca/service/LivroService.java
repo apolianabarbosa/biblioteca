@@ -145,29 +145,29 @@ public class LivroService {
         return ResponseEntity.ok(dto);
     }
 
-   public ResponseEntity<RespostaModel> deletarLivro(Long id) {
-    if (!lr.existsById(id)) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                             .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
-    }
+    public ResponseEntity<RespostaModel> deletarLivro(Long id) {
+        if (!lr.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
+        }
 
-    // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
-    if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
-    return ResponseEntity.status(HttpStatus.CONFLICT)
-                         .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
-    }
-    
-    // Verifica se existem empréstimos NÃO FINALIZADOS associados a este livro
-    if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoNot(id, Emprestimo.StatusEmprestimo.FINALIZADO)) {
+        // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
+        if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                             .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
+                            .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
+        }
+        
+        // Verifica se existem empréstimos NÃO FINALIZADOS associados a este livro
+        if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoNot(id, Emprestimo.StatusEmprestimo.FINALIZADO)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
+        }
+
+        // ... (verificação de reservas) ...
+
+        lr.deleteById(id);
+        return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
     }
-
-    // ... (verificação de reservas) ...
-
-    lr.deleteById(id);
-    return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
-}
     // MÉTODOS DE BUSCA E LISTAGEM (Acesso de Bibliotecário e Leitor)
 
     // Método para LISTAR todos os livros em ordem alfabética

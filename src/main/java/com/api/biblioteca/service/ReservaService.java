@@ -53,15 +53,6 @@ public class ReservaService {
         Livro livro = lr.findById(idLivro)
                 .orElseThrow(() -> new RuntimeException("Livro não encontrado"));
 
-        
-        if (ry.existsByUsuarioAndLivroAndStatusReserva(usuario, livro, StatusReserva.ATIVA)) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Você já possui uma reserva ativa para este livro.");
-        }
-
-        if(mr.existsByEmprestimoUsuarioAndStatusMulta(usuario, StatusMulta.PENDENTE)){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Você possui multas pendentes no sistema.");
-        }
-
         if (livro.getQtdDisponivel() <= 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Livro indisponível para reserva no momento.");
         }

@@ -37,7 +37,5 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
 
     boolean existsByUsuarioAndStatusEmprestimoIn(Usuario usuario, List<StatusEmprestimo> status);
 
-    boolean existsByUsuarioAndLivroAndDataEmprestimoAfter(Usuario usuario, Livro livro, LocalDateTime dataLimite);
 
-    boolean existsByUsuarioAndLivroAndStatusEmprestimoIn(Usuario usuario, Livro livro, List<StatusEmprestimo> statusImpedimem);
 }

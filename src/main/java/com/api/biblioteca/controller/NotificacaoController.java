@@ -23,7 +23,7 @@ public class NotificacaoController {
 
     // Listar notificações 
     @GetMapping("/minhas")
-    @PreAuthorize("hasAnyRole('LEITOR', 'BIBLIOTECARIO')")
+    @PreAuthorize("hasRole('LEITOR')")
     public ResponseEntity<List<NotificacaoDTO>> getMinhas(){
         List<NotificacaoDTO> notificaoes = ns.getMinhasNotificacoes();
         return ResponseEntity.ok(notificaoes);
@@ -31,7 +31,7 @@ public class NotificacaoController {
 
     // Contagem de notificações
     @GetMapping("/naoLidas/contagem")
-    @PreAuthorize("hasAnyRole('LEITOR', 'BIBLIOTECARIO')")
+    @PreAuthorize("hasRole('LEITOR')")
     public ResponseEntity<Long> getContagemNaoLidas(){
         long contagem = ns.getContagemNaoLidas();
         return ResponseEntity.ok(contagem);
@@ -39,7 +39,7 @@ public class NotificacaoController {
 
     // Marcar como lida
     @PutMapping("/{id}/lida")
-    @PreAuthorize("hasAnyRole('LEITOR', 'BIBLIOTECARIO')")
+    @PreAuthorize("hasRole('LEITOR')")
     public ResponseEntity<NotificacaoDTO> marcarComoLida(@PathVariable Long id){
         NotificacaoDTO notificacaoAtualizada = ns.marcarComoLida(id);
         return ResponseEntity.ok(notificacaoAtualizada);

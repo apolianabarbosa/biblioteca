@@ -47,104 +47,113 @@ public class EmprestimoService {
    // Em service/EmprestimoService.java
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
 
-    @Transactional
-    public Emprestimo criarEmprestimo(Long idUsuario, Long idLivro) {
+     @Transactional
+    public synchronized Emprestimo criarEmprestimo(Long idUsuario, Long idLivro) {
+        // 1. Validar Usuário
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + idUsuario));
 
+        // 2. Validar Livro
         Livro livro = livroRepository.findById(idLivro)
                 .orElseThrow(() -> new EntityNotFoundException("Livro não encontrado com o ID: " + idLivro));
 
-        // Se já existe um empréstimo (mesmo que ainda não retirado) para este usuário e livro, bloqueia.
-        List<StatusEmprestimo> statusImpedimem = List.of(StatusEmprestimo.AGUARDANDO_RETIRADA, StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO);
-        
-        if (emprestimoRepository.existsByUsuarioAndLivroAndStatusEmprestimoIn(usuario, livro, statusImpedimem)) {
-             // Esta exceção impede que o segundo clique crie um novo registro
-             throw new IllegalStateException("Você já possui uma solicitação ativa ou pendente para este livro.");
-        }
-
-        // Verificação de Multas
+        // 3. Verificação de Multas
         if (multaService.verificarSeUsuarioTemMultasPendentes(usuario)) {
             throw new IllegalStateException("Usuário possui multas pendentes e não pode realizar novos empréstimos.");
         }
-        
 
-        // Verifica se este usuário tem uma reserva para este livro
-        Optional<Reserva> reservaDoUsuarioOpt = reservaRepository.findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA)
+        // 4. Verificar se usuário já tem empréstimos em andamento
+        // (Isso impede que ele tenha mais de um livro emprestado ou reservado aguardando retirada)
+        List<StatusEmprestimo> statusesEmAndamento = List.of(
+            StatusEmprestimo.ATIVO, 
+            StatusEmprestimo.ATRASADO,
+            StatusEmprestimo.AGUARDANDO_RETIRADA
+        );
+
+        if (emprestimoRepository.existsByUsuarioAndStatusEmprestimoIn(usuario, statusesEmAndamento)) {
+            throw new IllegalStateException("Usuário já possui um empréstimo em andamento (ativo, atrasado ou aguardando retirada).");
+        }
+
+        // Validação Extra de Segurança: Verifica duplicidade específica para este livro e usuário AGORA
+        // Caso a verificação genérica acima falhe por delay de banco de dados
+        boolean jaSolicitouEsteLivro = emprestimoRepository.existsByUsuarioAndStatusEmprestimoIn(usuario, List.of(StatusEmprestimo.AGUARDANDO_RETIRADA));
+        if (jaSolicitouEsteLivro) {
+             throw new IllegalStateException("Solicitação já processada. Atualize a página.");
+        }
+
+        // 5. Lógica de Reserva (Sem fila de prioridade estrita)
+        Optional<Reserva> reservaDoUsuarioOpt = reservaRepository
+                .findByUsuarioAndLivroAndStatusReservaOrderByDataReservaAsc(usuario, livro, StatusReserva.ATIVA)
                 .stream().findFirst();
 
         if (reservaDoUsuarioOpt.isPresent()) {
             // CENÁRIO A: O usuário TEM reserva. 
             Reserva reservaDoUsuario = reservaDoUsuarioOpt.get();
             
-            // Verifica se existe alguém com reserva MAIS ANTIGA que a dele
-            boolean existeAlguemNaFrente = reservaRepository.existsByLivroAndStatusReservaAndDataReservaBefore(
-                livro, 
-                StatusReserva.ATIVA, 
-                reservaDoUsuario.getDataReserva() // Compara com a data dele
-            );
-
-            if (existeAlguemNaFrente) {
-                throw new IllegalStateException("Não é possível conceder. Existe outro usuário com prioridade na fila de reservas.");
-            }
-
-            // Se ele for o primeiro da fila, consumimos a reserva dele
-            reservaDoUsuario.setStatusReserva(StatusReserva.ATENDIDA);
+            // Consumir a reserva
+            reservaDoUsuario.setStatusReserva(StatusReserva.ATENDIDA); 
             reservaRepository.save(reservaDoUsuario);
 
         } else {
+            // CENÁRIO B: O usuário NÃO tem reserva.
+            // Verifica se existe ALGUMA reserva ativa para este livro por outra pessoa.
+            boolean existeReservaDeOutros = reservaRepository.existsByLivroAndStatusReserva(livro, StatusReserva.ATIVA);
             
-            // Se não tem reserva, ele só pode pegar se NÃO TIVER NINGUÉM na fila
-            boolean existemReservasParaOLivro = reservaRepository.existsByLivroAndStatusReserva(livro, StatusReserva.ATIVA);
-            
-            if (existemReservasParaOLivro) {
-                 throw new IllegalStateException("Este livro possui lista de espera. Faça uma reserva para entrar na fila.");
+            if (existeReservaDeOutros) {
+                throw new IllegalStateException("Este livro está reservado por outro usuário.");
             }
-
-            // Se não tem fila, verifica o estoque físico
-            if (livro.getQtdDisponivel() <= 0) {
-                 throw new IllegalStateException("Livro indisponível no estoque.");
-            }
-            // Decrementa estoque apenas se não veio de reserva (pois reserva já decrementou antes)
-            livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
         }
+
+        // 6. Verificar Estoque Físico
+        if (livro.getQtdDisponivel() <= 0) {
+            throw new IllegalStateException("Livro indisponível no estoque.");
+        }
+
+        // 7. Atualizar Estoque do Livro
+        livro.setQtdDisponivel(livro.getQtdDisponivel() - 1);
         
-        // Atualiza status do livro se zerou
         if (livro.getQtdDisponivel() == 0) {
-            livro.setStatusLivro(StatusLivro.EMPRESTADO);
+            livro.setStatusLivro(StatusLivro.EMPRESTADO); 
         }
         livroRepository.save(livro);
 
-        // Criação final do Empréstimo
+        // 8. Criar o Objeto Empréstimo
         Emprestimo emprestimo = new Emprestimo();
         emprestimo.setUsuario(usuario);
         emprestimo.setLivro(livro);
-        emprestimo.setStatusEmprestimo(StatusEmprestimo.AGUARDANDO_RETIRADA);
-        emprestimo.setDataEmprestimo(LocalDateTime.now());
+        emprestimo.setStatusEmprestimo(StatusEmprestimo.AGUARDANDO_RETIRADA); 
+        emprestimo.setDataEmprestimo(LocalDateTime.now()); 
         
+        // 9. Salvar Empréstimo
         Emprestimo emprestimoSalvo = emprestimoRepository.save(emprestimo);
 
-        // Envio de E-mail e Notificação
-        try{
-            emailService.enviarEmailAprovacaoEmprestimo(
-                emprestimoSalvo.getUsuario().getEmail(),
-                emprestimoSalvo.getUsuario().getNome(),
-                emprestimoSalvo.getLivro().getTitulo(),
-                emprestimoSalvo.getId()
-            );
-        } catch (MessagingException e){
-            System.err.println("Falha ao enviar e-mail: " + e.getMessage());
-        }
-        
-        try{
-            notificacaoService.criarNotificacao(
-                emprestimoSalvo.getUsuario(),
-                "Sua solicitação para \"" + emprestimoSalvo.getLivro().getTitulo() + "\" foi aprovada! Retire-o em até 48h.");
-        }catch (Exception e){
-            System.err.println("Erro notificação: " + e.getMessage());
-        }
+        // 10. Envio de E-mail e Notificação
+        enviarNotificacoesAssincronas(emprestimoSalvo);
 
         return emprestimoSalvo;
+    }
+    
+
+    private void enviarNotificacoesAssincronas(Emprestimo emprestimo) {
+        try {
+            emailService.enviarEmailAprovacaoEmprestimo(
+                emprestimo.getUsuario().getEmail(),
+                emprestimo.getUsuario().getNome(),
+                emprestimo.getLivro().getTitulo(),
+                emprestimo.getId()
+            );
+        } catch (MessagingException e) {
+            System.err.println("Falha ao enviar e-mail de aprovação: " + e.getMessage());
+        }
+
+        try {
+            notificacaoService.criarNotificacao(
+                emprestimo.getUsuario(),
+                "Sua solicitação para \"" + emprestimo.getLivro().getTitulo() + "\" foi aprovada! Retire-o em até 48h."
+            );
+        } catch (Exception e) {
+            System.err.println("Erro notificação: " + e.getMessage());
+        }
     }
 
     @Transactional
