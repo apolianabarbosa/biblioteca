@@ -68,6 +68,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/emprestimos/confirmar-retirada/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.PUT, "/emprestimos/devolver/{id}").hasRole("BIBLIOTECARIO")
                 .requestMatchers(HttpMethod.GET, "/multas").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.GET, "/relatorios/dashboard").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.GET, "/relatorios/top-emprestimos").hasRole("BIBLIOTECARIO")
+                .requestMatchers(HttpMethod.GET, "/relatorios/top-reservas").hasRole("BIBLIOTECARIO")
 
                 // Rotas de duplo acesso(Usuário/Admin) - A rota /livros foi movida para cima
                 .requestMatchers(HttpMethod.GET, "/usuario/meuPerfil").authenticated()

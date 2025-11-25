@@ -3,8 +3,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import com.api.biblioteca.dtos.RelatorioItemDTO;
 import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Reserva;
 import com.api.biblioteca.model.Reserva.StatusReserva;
@@ -38,6 +42,10 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     // Metodo para verificar a existencia de reservas em biblioteca service
     boolean existsByLivroId(Long livroId);
 
+    long countByLivroId(Long livroId);
+
+    long countByStatusReserva(Reserva.StatusReserva status);
+
     // Metodo para verificar se o usuário já tem reserva
     boolean existsByUsuarioAndLivroAndStatusReserva(Usuario usuario, Livro livro, StatusReserva statusReserva);
 
@@ -48,4 +56,10 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     boolean existsByLivroIdAndUsuarioIdAndStatusReserva(Long idLivro, Long idUsuario, StatusReserva statusReserva);
 
     boolean existsByLivroAndStatusReservaAndDataReservaBefore(Livro livro, StatusReserva statusReserva, LocalDateTime data);
+
+    @Query("SELECT new com.api.biblioteca.dtos.RelatorioItemDTO(l.titulo, COUNT(r)) " +
+           "FROM Reserva r JOIN r.livro l " +
+           "GROUP BY l.titulo " +
+           "ORDER BY COUNT(r) DESC")
+    List<RelatorioItemDTO> findLivrosMaisReservados(org.springframework.data.domain.Pageable limit);
 }

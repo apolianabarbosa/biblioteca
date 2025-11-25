@@ -23,7 +23,7 @@ import lombok.Setter;
 public class Livro {
     
     public enum StatusLivro{
-        DISPONIVEL, RESERVADO, EMPRESTADO
+        DISPONIVEL, RESERVADO, EMPRESTADO, INDISPONIVEL
     }
 
     @Id

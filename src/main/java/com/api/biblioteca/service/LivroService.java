@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,7 +65,7 @@ public class LivroService {
     public ResponseEntity<?> atualizarLivroParcial(Long id, Map<String, Object> dadosAtualizados) {
         Optional<Livro> livroOpt = lr.findById(id);
 
-        if (livroOpt.isEmpty()) {
+        if (livroOpt.isEmpty())   { 
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                              .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
         }
@@ -146,27 +147,60 @@ public class LivroService {
     }
 
     public ResponseEntity<RespostaModel> deletarLivro(Long id) {
-        if (!lr.existsById(id)) {
+        Optional<Livro> livroOpt = lr.findById(id);
+
+        if (livroOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(new RespostaModel("Livro com o ID " + id + " não encontrado."));
         }
 
-        // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
+        Livro livro = livroOpt.get();
+
+        // Verifica se existem reservas NÃO FINALIZADOS associados a este livro
         if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas associadas."));
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(new RespostaModel("Não é possível excluir: O livro, pois ele possui reservas associadas."));
         }
         
-        // Verifica se existem empréstimos NÃO FINALIZADOS associados a este livro
-        if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoNot(id, Emprestimo.StatusEmprestimo.FINALIZADO)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos associados."));
+        if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas ativas."));
         }
 
-        // ... (verificação de reservas) ...
+        // Lista de status de empréstimos que impedem exclusão
+        List<Emprestimo.StatusEmprestimo> statusBloqueio = List.of(
+                Emprestimo.StatusEmprestimo.ATIVO,
+                Emprestimo.StatusEmprestimo.AGUARDANDO_RETIRADA,
+                Emprestimo.StatusEmprestimo.ATRASADO
+        );
 
-        lr.deleteById(id);
-        return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
+        // Empréstimo não finalizado → impedir exclusão correta
+        if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoIn(id, statusBloqueio)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos não finalizados."));
+        }
+
+        
+        boolean temHistoricoEmprestimo = emprestimoRepository.countByLivroId(id) > 0;
+        boolean temHistoricoReserva = reservaRepository.countByLivroId(id) > 0;
+
+        // Livro com histórico - Inativação aplicada
+        if(temHistoricoEmprestimo || temHistoricoReserva) {
+            livro.setStatusLivro(Livro.StatusLivro.INDISPONIVEL);
+            livro.setQtdDisponivel(0);
+            livro.setTitulo(livro.getTitulo() + "(DESATIVADO)");
+
+            lr.save(livro);
+            return ResponseEntity.ok(new RespostaModel("Livro possuía histórico e inativado/arquivado com sucesso."));
+
+        }
+
+        try{
+            lr.deleteById(id);
+            return ResponseEntity.ok(new RespostaModel("Livro deletado permanentemente com sucesso."));
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new RespostaModel("Erro ao deletar livro: " + e.getMessage()));
+        }
     }
     // MÉTODOS DE BUSCA E LISTAGEM (Acesso de Bibliotecário e Leitor)
 
