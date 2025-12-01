@@ -157,50 +157,40 @@ public class LivroService {
         Livro livro = livroOpt.get();
 
         // Verifica se existem reservas NÃO FINALIZADOS associados a este livro
-        if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(new RespostaModel("Não é possível excluir: O livro, pois ele possui reservas associadas."));
-        }
-        
-        if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
+         if (reservaRepository.existsByLivroIdAndStatusReserva(id, Reserva.StatusReserva.ATIVA)) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new RespostaModel("Não é possível excluir o livro, pois ele possui reservas ativas."));
-        }
+    }
 
-        // Lista de status de empréstimos que impedem exclusão
-        List<Emprestimo.StatusEmprestimo> statusBloqueio = List.of(
-                Emprestimo.StatusEmprestimo.ATIVO,
-                Emprestimo.StatusEmprestimo.AGUARDANDO_RETIRADA,
-                Emprestimo.StatusEmprestimo.ATRASADO
-        );
+    // Emprestimos não finalizados impedem exclusão
+    List<Emprestimo.StatusEmprestimo> statusBloqueio = List.of(
+            Emprestimo.StatusEmprestimo.ATIVO,
+            Emprestimo.StatusEmprestimo.AGUARDANDO_RETIRADA,
+            Emprestimo.StatusEmprestimo.ATRASADO
+    );
 
-        // Empréstimo não finalizado → impedir exclusão correta
-        if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoIn(id, statusBloqueio)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos não finalizados."));
-        }
+    if (emprestimoRepository.existsByLivroIdAndStatusEmprestimoIn(id, statusBloqueio)) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new RespostaModel("Não é possível excluir o livro, pois ele possui empréstimos não finalizados."));
+    }
 
-        
-        boolean temHistoricoEmprestimo = emprestimoRepository.countByLivroId(id) > 0;
-        boolean temHistoricoReserva = reservaRepository.countByLivroId(id) > 0;
+    // Bloqueio definitivo se houver histórico
+    boolean temHistoricoEmprestimo = emprestimoRepository.countByLivroId(id) > 0;
+    boolean temHistoricoReserva = reservaRepository.countByLivroId(id) > 0;
 
-        // Livro com histórico - Inativação aplicada
-        if(temHistoricoEmprestimo || temHistoricoReserva) {
-            livro.setStatusLivro(Livro.StatusLivro.INDISPONIVEL);
-            livro.setQtdDisponivel(0);
-            livro.setTitulo(livro.getTitulo() + "(DESATIVADO)");
+    if (temHistoricoEmprestimo || temHistoricoReserva) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new RespostaModel("Exclusão não permitida: o livro possui histórico de uso."));
+    }
 
-            lr.save(livro);
-            return ResponseEntity.ok(new RespostaModel("Livro possuía histórico e inativado/arquivado com sucesso."));
-
-        }
-
-        try{
-            lr.deleteById(id);
-            return ResponseEntity.ok(new RespostaModel("Livro deletado permanentemente com sucesso."));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new RespostaModel("Erro ao deletar livro: " + e.getMessage()));
-        }
+    // Exclusão definitiva
+    try {
+        lr.deleteById(id);
+        return ResponseEntity.ok(new RespostaModel("Livro deletado permanentemente com sucesso."));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new RespostaModel("Erro ao deletar livro: " + e.getMessage()));
+    }
     }
     // MÉTODOS DE BUSCA E LISTAGEM (Acesso de Bibliotecário e Leitor)
 

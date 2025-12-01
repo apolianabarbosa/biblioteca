@@ -1,10 +1,10 @@
 package com.api.biblioteca.repository;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
-
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.api.biblioteca.dtos.RelatorioItemDTO;
@@ -48,9 +48,21 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long>{
 
     boolean existsByLivroIdAndStatusEmprestimoIn(Long livroId, List<StatusEmprestimo> status);
 
-    @Query("SELECT new com.api.biblioteca.dtos.RelatorioItemDTO(l.titulo, COUNT(e)) " +
-           "FROM Emprestimo e JOIN e.livro l " +
-           "GROUP BY l.titulo " +
+    // Top 5 sem filtro
+    @Query("SELECT NEW com.api.biblioteca.dtos.RelatorioItemDTO(e.livro.titulo, COUNT(e)) " +
+           "FROM Emprestimo e GROUP BY e.livro.titulo ORDER BY COUNT(e) DESC")
+    List<RelatorioItemDTO> findLivrosMaisEmprestados(Pageable pageable);
+
+    // Top 5 com filtro por data e retorno do Título
+    @Query("SELECT NEW com.api.biblioteca.dtos.RelatorioItemDTO(e.livro.titulo, COUNT(e)) " +
+           "FROM Emprestimo e " +
+           "WHERE (:startDate IS NULL OR e.dataEmprestimo >= :startDate) " +
+           "AND (:endDate IS NULL OR e.dataEmprestimo <= :endDate) " +
+           "GROUP BY e.livro.titulo " +
            "ORDER BY COUNT(e) DESC")
-    List<RelatorioItemDTO> findLivrosMaisEmprestados(org.springframework.data.domain.Pageable limit);
+    List<RelatorioItemDTO> findLivrosMaisEmprestadosComFiltro(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        Pageable pageable);
+
 }

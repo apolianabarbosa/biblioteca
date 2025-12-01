@@ -1,11 +1,13 @@
 package com.api.biblioteca.repository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.api.biblioteca.dtos.RelatorioItemDTO;
@@ -57,9 +59,21 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     boolean existsByLivroAndStatusReservaAndDataReservaBefore(Livro livro, StatusReserva statusReserva, LocalDateTime data);
 
-    @Query("SELECT new com.api.biblioteca.dtos.RelatorioItemDTO(l.titulo, COUNT(r)) " +
-           "FROM Reserva r JOIN r.livro l " +
-           "GROUP BY l.titulo " +
+    // Top 5 sem filtro
+    @Query("SELECT NEW com.api.biblioteca.dtos.RelatorioItemDTO(r.livro.titulo, COUNT(r)) " +
+           "FROM Reserva r GROUP BY r.livro.titulo ORDER BY COUNT(r) DESC")
+    List<RelatorioItemDTO> findLivrosMaisReservados(Pageable pageable);
+
+    // Top 5 com filtro por data e retorno do Título
+    @Query("SELECT NEW com.api.biblioteca.dtos.RelatorioItemDTO(r.livro.titulo, COUNT(r)) " +
+           "FROM Reserva r " +
+           "WHERE (:startDate IS NULL OR r.dataReserva >= :startDate) " +
+           "AND (:endDate IS NULL OR r.dataReserva <= :endDate) " +
+           "GROUP BY r.livro.titulo " +
            "ORDER BY COUNT(r) DESC")
-    List<RelatorioItemDTO> findLivrosMaisReservados(org.springframework.data.domain.Pageable limit);
+    List<RelatorioItemDTO> findLivrosMaisReservadosComFiltro(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        Pageable pageable);
+
 }

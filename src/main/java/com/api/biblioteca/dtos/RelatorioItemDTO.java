@@ -1,20 +1,21 @@
 package com.api.biblioteca.dtos;
 
 public class RelatorioItemDTO {
-    private String nome;
+    private String titulo;
     private Long quantidade;
 
-    public RelatorioItemDTO(String nome, Long quantidade) {
-        this.nome = nome;
+    // Construtor que a JPQL está chamando
+    public RelatorioItemDTO(String titulo, Long quantidade) {
+        this.titulo = titulo;
         this.quantidade = quantidade;
     }
 
-    public String getNome() {
-        return nome;
+    public String getTitulo() {
+        return titulo;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
     public Long getQuantidade() {
@@ -25,5 +26,6 @@ public class RelatorioItemDTO {
         this.quantidade = quantidade;
     }
 
+    
     
 }
