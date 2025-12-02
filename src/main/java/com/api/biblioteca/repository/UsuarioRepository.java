@@ -36,5 +36,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>{
     // Filtro por tipo de usuario de A-Z
     List<Usuario> findByRoleOrderByNomeAsc(UsuarioRole role);
 
+    List<Usuario> findByRole(UsuarioRole role);
+
 
 }

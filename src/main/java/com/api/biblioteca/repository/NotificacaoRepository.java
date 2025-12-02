@@ -14,4 +14,8 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long>{
     List<Notificacao> findByDestinatarioOrderByDataCriacaoDesc(Usuario destinatario);
 
     long countByDestinatarioAndLidaFalse(Usuario destinatario) ;
+
+    void deleteByDestinatarioId(Long destinatarioId);
+
+    List<Notificacao> findByDestinatarioAndLidaFalse(Usuario destinatario);
 }

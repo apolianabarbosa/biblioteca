@@ -16,6 +16,7 @@ import com.api.biblioteca.model.Livro;
 import com.api.biblioteca.model.Reserva;
 import com.api.biblioteca.model.Reserva.StatusReserva;
 import com.api.biblioteca.model.Usuario;
+import com.api.biblioteca.model.UsuarioRole;
 import com.api.biblioteca.model.Multa.StatusMulta;
 import com.api.biblioteca.repository.LivroRepository;
 import com.api.biblioteca.repository.MultaRepository;
@@ -70,15 +71,32 @@ public class ReservaService {
 
         Reserva reservaSalva = ry.save(novaReserva);
 
-        //Notificação
+        //Notificação Leitor
         try{
             ns.criarNotificacao(
                 reservaSalva.getUsuario(),
                 "Você reservou o livro \"" + reservaSalva.getLivro().getTitulo() + "\" com sucesso."
             );
         }catch (Exception e){
-            System.err.println("Erro ao criar notificação (criação reserva): " + e.getMessage());
+            System.err.println("Erro ao notificar o usuário (criação reserva): " + e.getMessage());
         }
+
+        //Notificação Bibliotecario
+        try{
+            List<Usuario> bibliotecarios = ur.findByRole(UsuarioRole.BIBLIOTECARIO);
+
+            for(Usuario b : bibliotecarios){
+                ns.criarNotificacao(
+                    b,
+                    "O usuário \"" + reservaSalva.getUsuario().getNome()
+                    + "\" realizou uma reserva para o livro \""
+                    + reservaSalva.getLivro().getTitulo() + "\"."
+                );
+            }
+        }catch(Exception e){
+            System.err.println("Erro ao notificar bibliotecários nova (criação reserva): " + e.getMessage());
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(reservaSalva));
     }
 

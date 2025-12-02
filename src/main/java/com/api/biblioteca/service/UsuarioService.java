@@ -1,6 +1,8 @@
 package com.api.biblioteca.service;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ public class UsuarioService {
     private final AuthenticationManager authenticationManager;
     private final RespostaModel rm;
     private final EmailService emailService;
+    private final JwtService jwtService;
 
     @Value("${biblioteca.admin.codigo-secreto}")
     private String codigoSecreto;
@@ -42,13 +45,15 @@ public class UsuarioService {
         PasswordEncoder passwordEncoder,
         AuthenticationManager authenticationManager,
         RespostaModel rm,
-        EmailService emailService
+        EmailService emailService,
+        JwtService jwtService
     ) {
         this.ur = ur;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.rm = rm;
         this.emailService = emailService;
+        this.jwtService = jwtService;
     }
 
 // Método de criar cadastro de um novo usuário
@@ -216,7 +221,13 @@ public ResponseEntity<?> atualizarDadosUsuario(AtualizacaoUsuarioDTO dadosAtuali
 
     ur.save(usuarioExistente);
 
-    return ResponseEntity.ok(new RespostaModel("Perfil atualizado com sucesso!"));
+    String novoToken = jwtService.generateToken(usuarioExistente); 
+
+    Map<String, Object> resposta = new HashMap<>();
+    resposta.put("message", "Perfil atualizado com sucesso!");
+    resposta.put("token", novoToken);
+    
+    return ResponseEntity.ok(resposta);
 }
 
 // Métodos visão Adm

@@ -83,6 +83,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/emprestimos/buscar/{id}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/multas/buscar/{id}").hasAnyRole("BIBLIOTECARIO", "LEITOR")
                 .requestMatchers(HttpMethod.GET, "/multas/filtrar/statusMulta").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.GET, "/notificacoes/minhas").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.GET, "/notificacoes/naoLidas/contagem").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.PUT, "notificacoes/{id}/lida").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.PUT, "notificacoes/todas/lidas").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.DELETE, "notificacoes/{id}/deletar").hasAnyRole("BIBLIOTECARIO", "LEITOR")
+                .requestMatchers(HttpMethod.DELETE, "notificacoes/excluir/todas").hasAnyRole("BIBLIOTECARIO", "LEITOR")
 
                 // Rota de Usuário
                 .requestMatchers(HttpMethod.POST, "/reservas/solicitar").hasRole("LEITOR")
@@ -90,9 +96,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/emprestimos/usuario/{idUsuario}").hasRole("LEITOR")
                 .requestMatchers(HttpMethod.PUT, "/multas/pagar/{id}").hasRole("LEITOR")
                 .requestMatchers(HttpMethod.GET, "/multas/usuario/{idUsuario}").hasRole("LEITOR")
-                .requestMatchers(HttpMethod.GET, "/notificacoes/minhas").hasRole("LEITOR")
-                .requestMatchers(HttpMethod.GET, "/notificacoes/naoLidas/contagem").hasRole("LEITOR")
-                .requestMatchers(HttpMethod.PUT, "notificacoes/{id}/lida").hasRole("LEITOR")
+    
                 
                 // Todas as outras rotas exigem autenticação
                 .anyRequest().authenticated()

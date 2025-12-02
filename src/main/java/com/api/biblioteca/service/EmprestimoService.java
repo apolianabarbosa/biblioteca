@@ -197,6 +197,8 @@ public class EmprestimoService {
         // Finaliza empréstimo
         emprestimo.setStatusEmprestimo(StatusEmprestimo.FINALIZADO);
 
+        emprestimo.setDataDevolucaoReal(LocalDateTime.now());
+
         // Re-fetch do livro do banco para evitar estado stale
         Livro livro = livroRepository.findById(emprestimo.getLivro().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Livro associado não encontrado"));
@@ -250,7 +252,7 @@ public class EmprestimoService {
         livro.setStatusLivro(StatusLivro.INDISPONIVEL);
         livroRepository.save(livro);
 
-        return ResponseEntity.ok(new RespostaModel("Livro desativado com sucesso."));
+        return ResponseEntity.ok(new RespostaModel("Livro deletado com sucesso."));
     }
 
     @Transactional

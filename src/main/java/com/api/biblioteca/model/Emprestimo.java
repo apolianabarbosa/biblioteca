@@ -42,6 +42,9 @@ public class Emprestimo {
     @Column(name = "status_emprestimo")
     private StatusEmprestimo statusEmprestimo;
 
+    @Column(name = "data_devolucao_real")
+    private LocalDateTime dataDevolucaoReal;
+
     @ManyToOne
     @JoinColumn(name = "fk_id_usuario", nullable = false)
     private Usuario usuario;
