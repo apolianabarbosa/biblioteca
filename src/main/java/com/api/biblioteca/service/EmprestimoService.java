@@ -295,6 +295,7 @@ public class EmprestimoService {
         emprestimo.getId(),
         emprestimo.getDataEmprestimo(),
         emprestimo.getDataPrevistaDevolucao(),
+        emprestimo.getDataDevolucaoReal(),
         emprestimo.getStatusEmprestimo(),
         new LivroResumidoDTO(
             emprestimo.getLivro().getId(),

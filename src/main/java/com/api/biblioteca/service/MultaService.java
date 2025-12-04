@@ -27,23 +27,23 @@ public class MultaService {
     @Autowired
     private NotificacaoService notificacaoService;
 
-    // private static final BigDecimal VALOR_DIARIO_MULTA = new BigDecimal("1.50");
-    private static final BigDecimal VALOR_POR_MINUTO_MULTA = new BigDecimal("0.50");
+    private static final BigDecimal VALOR_DIARIO_MULTA = new BigDecimal("1.00");
+    // private static final BigDecimal VALOR_POR_MINUTO_MULTA = new BigDecimal("0.50");
 
     @Transactional
     public Multa criarMulta(Emprestimo emprestimo) {
-        // long diasAtraso = ChronoUnit.DAYS.between(emprestimo.getDataPrevistaDevolucao(), LocalDateTime.now());
-        long minutosAtraso = ChronoUnit.MINUTES.between(emprestimo.getDataPrevistaDevolucao(), LocalDateTime.now());
+        long diasAtraso = ChronoUnit.DAYS.between(emprestimo.getDataPrevistaDevolucao(), LocalDateTime.now());
+        // long minutosAtraso = ChronoUnit.MINUTES.between(emprestimo.getDataPrevistaDevolucao(), LocalDateTime.now());
         // Garante que a multa seja aplicada apenas para atrasos de pelo menos um dia.
-        // if (diasAtraso <= 0) {
-        //     return null; 
-        // }
-        if (minutosAtraso <= 0) {
+        if (diasAtraso <= 0) {
             return null; 
         }
+        // if (minutosAtraso <= 0) {
+        //     return null; 
+        // }
 
-        // BigDecimal valorTotal = VALOR_DIARIO_MULTA.multiply(new BigDecimal(diasAtraso));
-        BigDecimal valorTotal = VALOR_POR_MINUTO_MULTA.multiply(new BigDecimal(minutosAtraso));
+        BigDecimal valorTotal = VALOR_DIARIO_MULTA.multiply(new BigDecimal(diasAtraso));
+        // BigDecimal valorTotal = VALOR_POR_MINUTO_MULTA.multiply(new BigDecimal(minutosAtraso));
         
 
         Multa multa = new Multa();
